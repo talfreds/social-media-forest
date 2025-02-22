@@ -1,0 +1,17 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') return res.status(405).end();
+
+
+  const posts2 = await prisma.post.findMany()
+  console.log(`🚀🤗 ~ handler ~ posts2:`, posts2)
+  const posts = await prisma.post.findMany({
+    include: { author: { select: { name: true } }, comments: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.status(200).json(posts);
+}
