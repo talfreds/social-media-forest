@@ -23,18 +23,22 @@ interface Author {
 }
 
 interface NestedCommentData {
-  id: number;
+  id: number | string;
   content: string;
-  author: Author & { id?: number };
+  author: Author & { id?: string };
   replies?: NestedCommentData[];
 }
 
 interface NestedCommentProps {
   comment: NestedCommentData;
-  postId: number;
+  postId: number | string;
   isLoggedIn: boolean;
   level?: number;
-  onReply: (postId: number, parentId: number, content: string) => void;
+  onReply: (
+    postId: number | string,
+    parentId: number | string,
+    content: string
+  ) => void;
   theme: any;
 }
 

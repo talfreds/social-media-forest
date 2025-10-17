@@ -8,49 +8,96 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String?
-  posts     Post[]
-  comments  Comment[]
-  forests   Forest[] @relation("ForestCreator")
+  id                String    @id @default(cuid())
+  email             String    @unique
+  password          String
+  name              String?   @unique // Display name - globally unique
+  posts             Post[]
+  comments          Comment[]
+  forestsCreated    Forest[]  @relation("ForestCreator")
+  
+  // Friend relationships
+  friendsInitiated  Friend[]  @relation("FriendInitiator")
+  friendsReceived   Friend[]  @relation("FriendReceiver")
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Friend {
+  id          String   @id @default(cuid())
+  initiatorId String
+  receiverId  String
+  status      FriendStatus @default(PENDING)
+  
+  initiator   User     @relation("FriendInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  receiver    User     @relation("FriendReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([initiatorId, receiverId])
+  @@index([initiatorId])
+  @@index([receiverId])
+  @@index([status])
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
 }
 
 model Forest {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   name        String   @unique
   description String?
-  creatorId   Int
+  isPrivate   Boolean  @default(false) // Friends-only forest
+  creatorId   String
   creator     User     @relation("ForestCreator", fields: [creatorId], references: [id])
   posts       Post[]
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([creatorId])
+  @@index([isPrivate])
 }
 
 model Post {
-  id        Int       @id @default(autoincrement())
+  id        String    @id @default(cuid())
   content   String
-  authorId  Int
+  authorId  String
   author    User      @relation(fields: [authorId], references: [id])
-  forestId  Int?
+  forestId  String?
   forest    Forest?   @relation(fields: [forestId], references: [id])
   comments  Comment[]
-  createdAt DateTime  @default(now())
   location  Json?     // Stores { lat: number, lon: number }
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  @@index([authorId])
+  @@index([forestId])
+  @@index([createdAt])
 }
 
-
 model Comment {
-  id          Int       @id @default(autoincrement())
+  id          String    @id @default(cuid())
   content     String
-  authorId    Int
+  authorId    String
   author      User      @relation(fields: [authorId], references: [id])
-  postId      Int
-  post        Post      @relation(fields: [postId], references: [id])
-  createdAt   DateTime  @default(now())
+  postId      String
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   
   // Self-referential for nested comments
-  parentId    Int?
-  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  parentId    String?
+  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies     Comment[] @relation("CommentReplies")
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([authorId])
+  @@index([postId])
+  @@index([parentId])
 }

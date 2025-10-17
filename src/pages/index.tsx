@@ -25,23 +25,24 @@ import { forestBackgrounds } from "../lib/theme";
 import prisma from "../lib/prisma";
 
 type Comment = {
-  id: number;
+  id: number | string;
   content: string;
-  author: { id: number; name: string | null };
+  author: { id: string; name: string | null };
   replies?: Comment[];
 };
 
 type Post = {
-  id: number;
+  id: number | string;
   content: string;
-  author: { id: number; name: string | null };
+  author: { id: string; name: string | null };
   comments: Comment[];
   location?: { lat: number; lon: number };
+  forestId: number | string | null;
 };
 
 type Props = {
   isLoggedIn: boolean;
-  currentUser: { id: number; name: string | null } | null;
+  currentUser: { id: string; name: string | null } | null;
   nearbyPosts: Post[];
   allPosts: Post[];
   darkMode: boolean;
@@ -94,30 +95,62 @@ export default function Home({
 
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newPost.trim()) return;
+
+    // Optimistic update - add post immediately
+    const tempPost: Post = {
+      id: `temp-${Date.now()}`,
+      content: newPost,
+      author: {
+        id: currentUser?.id || "",
+        name: currentUser?.name || "You",
+      },
+      comments: [],
+      forestId: currentForestId,
+    };
+
+    // Update UI immediately
+    setPosts((prevPosts) => [tempPost, ...prevPosts]);
+    setNewPost("");
+
     try {
       const res = await fetch("/api/posts/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: newPost,
+          content: tempPost.content,
           location: null,
           forestId: currentForestId,
         }),
       });
+
       if (res.ok) {
-        window.location.reload();
+        const newPostData = await res.json();
+        // Replace temp post with real one
+        setPosts((prevPosts) =>
+          prevPosts.map((post) =>
+            post.id === tempPost.id ? { ...newPostData, comments: [] } : post
+          )
+        );
       } else {
         console.error("Post creation failed:", await res.json());
+        // Revert optimistic update
+        setPosts((prevPosts) =>
+          prevPosts.filter((post) => post.id !== tempPost.id)
+        );
       }
     } catch (error) {
       console.error("Error submitting post:", error);
+      // Revert optimistic update
+      setPosts((prevPosts) =>
+        prevPosts.filter((post) => post.id !== tempPost.id)
+      );
     }
-    setNewPost("");
   };
 
   const handleReplySubmit = async (
-    postId: number,
-    parentId: number | null,
+    postId: number | string,
+    parentId: number | string | null,
     content: string
   ) => {
     if (!content.trim()) return;
@@ -275,13 +308,14 @@ export default function Home({
         ))}
 
         <Container
-          maxWidth="lg"
+          maxWidth={false}
           sx={{
             py: 4,
             position: "relative",
             zIndex: 1,
-            pl: { xs: 2, md: "8%", lg: "12%" }, // Position halfway between left and middle
-            pr: { xs: 2, md: 3 },
+            pl: { xs: 2, md: 4, lg: 6 },
+            pr: { xs: 2, md: 4 },
+            maxWidth: "1400px",
           }}
         >
           {/* Tree Grove (Posts) */}
@@ -295,20 +329,23 @@ export default function Home({
               maxWidth: "800px",
             }}
           >
-            {posts.length > 0 ? (
-              posts.map((post) => (
-                <TreePost
-                  key={post.id}
-                  id={post.id}
-                  content={post.content}
-                  author={post.author}
-                  comments={post.comments}
-                  isLoggedIn={isLoggedIn}
-                  onReply={handleReplySubmit}
-                  replyInputs={replyInputs}
-                  setReplyInputs={setReplyInputs}
-                />
-              ))
+            {posts.filter((post) => post.forestId === currentForestId).length >
+            0 ? (
+              posts
+                .filter((post) => post.forestId === currentForestId)
+                .map((post) => (
+                  <TreePost
+                    key={post.id}
+                    id={post.id}
+                    content={post.content}
+                    author={post.author}
+                    comments={post.comments}
+                    isLoggedIn={isLoggedIn}
+                    onReply={handleReplySubmit}
+                    replyInputs={replyInputs}
+                    setReplyInputs={setReplyInputs}
+                  />
+                ))
             ) : (
               <Card
                 sx={{

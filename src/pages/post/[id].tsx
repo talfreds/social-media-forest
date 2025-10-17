@@ -112,13 +112,14 @@ export default function PostPage({
         }}
       >
         <Container
-          maxWidth="lg"
+          maxWidth={false}
           sx={{
             py: 4,
             position: "relative",
             zIndex: 1,
-            pl: { xs: 2, md: "8%", lg: "12%" }, // Position halfway between left and middle
-            pr: { xs: 2, md: 3 },
+            pl: { xs: 2, md: 4, lg: 6 }, // Small left margin, left-aligned
+            pr: { xs: 2, md: 4 },
+            maxWidth: "1400px", // Limit max width but allow left alignment
           }}
         >
           {/* Breadcrumbs */}

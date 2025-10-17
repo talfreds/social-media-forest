@@ -4,11 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "dev:all": "docker compose up -d && npm run dev",
+    "db:reset": "docker compose up -d && pnpx prisma db push --force-reset && pnpx prisma generate && pnpm dev",
+    "db:push": "pnpx prisma db push && pnpx prisma generate",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
+  "packageManager": "pnpm@9.15.4",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -24,12 +29,17 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
+    "jest": "^29.7.0",
+    "node-mocks-http": "^1.17.2",
     "prisma": "^6.4.1",
     "typescript": "^5"
   }

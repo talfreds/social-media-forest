@@ -23,25 +23,25 @@ import NestedComment from "./NestedComment";
 import Link from "next/link";
 
 interface Comment {
-  id: number;
+  id: number | string;
   content: string;
-  author: { id: number; name: string | null };
+  author: { id: string; name: string | null };
   replies?: Comment[];
 }
 
 interface TreePostProps {
-  id: number;
+  id: number | string;
   content: string;
-  author: { id: number; name: string | null };
+  author: { id: string; name: string | null };
   comments: Comment[];
   isLoggedIn: boolean;
   onReply: (
-    postId: number,
-    parentId: number | null,
+    postId: number | string,
+    parentId: number | string | null,
     content: string
   ) => Promise<void>;
-  replyInputs: Record<number, string>;
-  setReplyInputs: (inputs: Record<number, string>) => void;
+  replyInputs: Record<number | string, string>;
+  setReplyInputs: (inputs: Record<number | string, string>) => void;
 }
 
 const TreePost: React.FC<TreePostProps> = ({
@@ -455,10 +455,15 @@ const TreePost: React.FC<TreePostProps> = ({
                   borderRadius: "12px",
                   px: 1,
                   py: 0.5,
-                  fontSize: "0.3rem",
+                  fontSize: "0.7rem",
                   fontWeight: 600,
                   boxShadow: `0 2px 8px ${style.leafColor}66`,
                   zIndex: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minWidth: "60px",
+                  textAlign: "center",
                 }}
               >
                 {comments.length}{" "}

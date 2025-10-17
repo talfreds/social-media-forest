@@ -421,9 +421,9 @@ export default function UserProfile({
 export const getServerSideProps: GetServerSideProps<
   Omit<Props, "setDarkMode">
 > = async (context) => {
-  const userId = Number(context.params?.id);
+  const userId = context.params?.id as string;
 
-  if (!userId || isNaN(userId)) {
+  if (!userId) {
     return { notFound: true };
   }
 

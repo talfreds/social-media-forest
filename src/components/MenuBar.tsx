@@ -39,9 +39,12 @@ export default function MenuBar({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [formType, setFormType] = useState<"register" | "login" | null>(null);
   const [showLoginError, setShowLoginError] = useState(false);
-  const [newSectionOpen, setNewSectionOpen] = useState(false);
+
+  // Separate modals for different actions
+  const [changeForestOpen, setChangeForestOpen] = useState(false);
+  const [createForestOpen, setCreateForestOpen] = useState(false);
+
   const [currentForest, setCurrentForest] = useState<ForestType>("deep-woods");
-  const [createForestMode, setCreateForestMode] = useState(false);
   const [newForestName, setNewForestName] = useState("");
   const [newForestDesc, setNewForestDesc] = useState("");
   const [forestError, setForestError] = useState("");
@@ -59,17 +62,24 @@ export default function MenuBar({
     setFormType(null);
   };
 
-  const handleOpenNewSection = () => {
+  const handleOpenChangeForest = () => {
+    setChangeForestOpen(true);
+  };
+
+  const handleCloseChangeForest = () => {
+    setChangeForestOpen(false);
+  };
+
+  const handleOpenCreateForest = () => {
     if (!isLoggedIn) {
       setShowLoginError(true);
       return;
     }
-    setNewSectionOpen(true);
+    setCreateForestOpen(true);
   };
 
-  const handleCloseNewSection = () => {
-    setNewSectionOpen(false);
-    setCreateForestMode(false);
+  const handleCloseCreateForest = () => {
+    setCreateForestOpen(false);
     setNewForestName("");
     setNewForestDesc("");
     setForestError("");
@@ -92,8 +102,7 @@ export default function MenuBar({
       });
 
       if (res.ok) {
-        const forest = await res.json();
-        // Reload to show new forest
+        handleCloseCreateForest();
         window.location.reload();
       } else {
         const error = await res.json();
@@ -139,8 +148,35 @@ export default function MenuBar({
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Button variant="outlined" onClick={handleOpenNewSection}>
-            New Section
+          {isLoggedIn && (
+            <Button
+              variant="outlined"
+              href="/friends"
+              sx={{
+                minWidth: "auto",
+                display: { xs: "none", sm: "flex" },
+              }}
+            >
+              Friends
+            </Button>
+          )}
+          <Button
+            variant="outlined"
+            onClick={handleOpenChangeForest}
+            sx={{ minWidth: "auto" }}
+          >
+            Change Forest
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleOpenCreateForest}
+            sx={{
+              bgcolor: "#4A6741",
+              "&:hover": { bgcolor: "#6B8B5A" },
+              minWidth: "auto",
+            }}
+          >
+            New Forest
           </Button>
           {!isLoggedIn ? (
             <>
@@ -240,18 +276,19 @@ export default function MenuBar({
           </Alert>
         </Snackbar>
 
+        {/* Change Forest Dialog */}
         <Dialog
-          open={newSectionOpen}
-          onClose={handleCloseNewSection}
+          open={changeForestOpen}
+          onClose={handleCloseChangeForest}
           fullWidth
           maxWidth="md"
         >
           <DialogTitle sx={{ textAlign: "center", pt: 3 }}>
             <Typography variant="h4" sx={{ color: "#4A6741", fontWeight: 700 }}>
-              🌲 Choose Your Forest 🌲
+              🌲 Change Forest 🌲
             </Typography>
             <Typography variant="body1" sx={{ mt: 1, color: "#6B8B5A" }}>
-              Select a forest realm to explore and contribute to
+              Switch to a different forest realm
             </Typography>
           </DialogTitle>
           <DialogContent sx={{ p: 4 }}>
@@ -308,118 +345,93 @@ export default function MenuBar({
               />
             </Box>
 
-            {!createForestMode ? (
-              <Box sx={{ mt: 4, textAlign: "center" }}>
-                <Typography variant="body2" sx={{ color: "#6B8B5A", mb: 3 }}>
-                  Currently exploring:{" "}
-                  <strong>{getForestName(currentForest)}</strong>
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 2,
-                    justifyContent: "center",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <Button
-                    variant="contained"
-                    onClick={handleCloseNewSection}
-                    sx={{
-                      bgcolor: "#4A6741",
-                      "&:hover": { bgcolor: "#6B8B5A" },
-                      px: 4,
-                      py: 1.5,
-                      borderRadius: "25px",
-                      minWidth: "160px",
-                    }}
-                  >
-                    🌲 Enter {getForestName(currentForest)}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => setCreateForestMode(true)}
-                    sx={{
-                      borderColor: "#4A6741",
-                      color: "#4A6741",
-                      "&:hover": {
-                        borderColor: "#6B8B5A",
-                        bgcolor: "rgba(74, 103, 65, 0.1)",
-                      },
-                      px: 3,
-                      py: 1.5,
-                      borderRadius: "25px",
-                      minWidth: "160px",
-                    }}
-                  >
-                    🌱 Create New Forest
-                  </Button>
-                </Box>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "#6B8B5A", mt: 2, display: "block" }}
-                >
-                  Click on any forest above to change your current location
-                </Typography>
-              </Box>
-            ) : (
-              <Box sx={{ mt: 4 }}>
-                <Typography
-                  variant="h6"
-                  sx={{ color: "#4A6741", mb: 2, fontWeight: 600 }}
-                >
-                  Plant a New Forest
-                </Typography>
-                <TextField
-                  label="Forest Name"
-                  value={newForestName}
-                  onChange={(e) => setNewForestName(e.target.value)}
-                  fullWidth
-                  sx={{ mb: 2 }}
-                  error={!!forestError}
-                />
-                <TextField
-                  label="Description (optional)"
-                  value={newForestDesc}
-                  onChange={(e) => setNewForestDesc(e.target.value)}
-                  fullWidth
-                  multiline
-                  rows={3}
-                  sx={{ mb: 2 }}
-                />
-                {forestError && (
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "error.main", mb: 2 }}
-                  >
-                    {forestError}
-                  </Typography>
-                )}
-                <Box
-                  sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
-                >
-                  <Button
-                    onClick={() => {
-                      setCreateForestMode(false);
-                      setForestError("");
-                    }}
-                    sx={{ color: "#6B8B5A" }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={handleCreateForest}
-                    sx={{
-                      bgcolor: "#4A6741",
-                      "&:hover": { bgcolor: "#6B8B5A" },
-                    }}
-                  >
-                    Create Forest
-                  </Button>
-                </Box>
-              </Box>
+            <Box sx={{ mt: 4, textAlign: "center" }}>
+              <Typography variant="body2" sx={{ color: "#6B8B5A", mb: 3 }}>
+                Currently exploring:{" "}
+                <strong>{getForestName(currentForest)}</strong>
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={handleCloseChangeForest}
+                sx={{
+                  bgcolor: "#4A6741",
+                  "&:hover": { bgcolor: "#6B8B5A" },
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: "25px",
+                }}
+              >
+                🌲 Switch to {getForestName(currentForest)}
+              </Button>
+            </Box>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Forest Dialog */}
+        <Dialog
+          open={createForestOpen}
+          onClose={handleCloseCreateForest}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle sx={{ textAlign: "center", pt: 3 }}>
+            <Typography variant="h4" sx={{ color: "#4A6741", fontWeight: 700 }}>
+              🌱 Plant a New Forest 🌱
+            </Typography>
+            <Typography variant="body1" sx={{ mt: 1, color: "#6B8B5A" }}>
+              Create your own forest realm
+            </Typography>
+          </DialogTitle>
+          <DialogContent sx={{ p: 4 }}>
+            <TextField
+              label="Forest Name"
+              value={newForestName}
+              onChange={(e) => setNewForestName(e.target.value)}
+              fullWidth
+              sx={{ mb: 2 }}
+              error={!!forestError}
+              placeholder="e.g. Mystic Woods, Vancouver, New York Travel"
+            />
+            <TextField
+              label="Description (optional)"
+              value={newForestDesc}
+              onChange={(e) => setNewForestDesc(e.target.value)}
+              fullWidth
+              multiline
+              rows={3}
+              sx={{ mb: 2 }}
+              placeholder="Describe the vibe and purpose of your forest..."
+            />
+            {forestError && (
+              <Typography variant="body2" sx={{ color: "error.main", mb: 2 }}>
+                {forestError}
+              </Typography>
             )}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                justifyContent: "flex-end",
+                mt: 3,
+              }}
+            >
+              <Button
+                onClick={handleCloseCreateForest}
+                sx={{ color: "#6B8B5A" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleCreateForest}
+                sx={{
+                  bgcolor: "#4A6741",
+                  "&:hover": { bgcolor: "#6B8B5A" },
+                }}
+              >
+                Create Forest
+              </Button>
+            </Box>
           </DialogContent>
         </Dialog>
       </Toolbar>
