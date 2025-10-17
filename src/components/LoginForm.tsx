@@ -77,21 +77,7 @@ export default function LoginForm({ isVisible }: { isVisible: boolean }) {
             gap: 2,
           }}
         >
-          {/* Error Message */}
-          {errorMessage && (
-            <Typography
-              variant="body2"
-              color="error"
-              sx={{
-                bgcolor: "error.light",
-                p: 1,
-                borderRadius: 1,
-                textAlign: "center",
-              }}
-            >
-              {errorMessage}
-            </Typography>
-          )}
+          {/* Error Message - Removed redundant message since fields show the error */}
 
           {/* Email Field */}
           <TextField
@@ -103,7 +89,7 @@ export default function LoginForm({ isVisible }: { isVisible: boolean }) {
             variant="outlined"
             size="medium"
             error={!!errorMessage}
-            helperText={errorMessage && "Please check your credentials"}
+            helperText={errorMessage || ""}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 1,

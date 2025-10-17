@@ -158,7 +158,13 @@ export default function FriendsPage({
         <title>Friends - Social Media</title>
       </Head>
 
-      <MenuBar darkMode={darkMode} setDarkMode={() => {}} isLoggedIn={true} />
+      <MenuBar
+        darkMode={darkMode}
+        setDarkMode={() => {}}
+        isLoggedIn={true}
+        currentForestId={null}
+        currentForestName={null}
+      />
 
       <Box
         sx={{

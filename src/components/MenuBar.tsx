@@ -1,5 +1,6 @@
 // components/MenuBar.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import {
   AppBar,
   Toolbar,
@@ -17,25 +18,41 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemButton,
 } from "@mui/material";
 import { Brightness7, Brightness4, Forest } from "@mui/icons-material";
 import RegisterForm from "./RegisterForm";
 import LoginForm from "./LoginForm";
 import LogoutButton from "./LogoutButton";
-import ForestSection, { ForestType } from "./ForestSection";
 import Image from "next/image";
 
 interface MenuBarProps {
   darkMode: boolean;
   setDarkMode: (value: boolean) => void;
   isLoggedIn: boolean;
+  currentForestId?: string | null;
+  currentForestName?: string | null;
+}
+
+interface ForestData {
+  id: string;
+  name: string;
+  description: string | null;
+  isPrivate: boolean;
+  _count: { posts: number };
 }
 
 export default function MenuBar({
   darkMode,
   setDarkMode,
   isLoggedIn,
+  currentForestId,
+  currentForestName,
 }: MenuBarProps) {
+  const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [formType, setFormType] = useState<"register" | "login" | null>(null);
   const [showLoginError, setShowLoginError] = useState(false);
@@ -44,10 +61,15 @@ export default function MenuBar({
   const [changeForestOpen, setChangeForestOpen] = useState(false);
   const [createForestOpen, setCreateForestOpen] = useState(false);
 
-  const [currentForest, setCurrentForest] = useState<ForestType>("deep-woods");
+  const [forests, setForests] = useState<ForestData[]>([]);
+  const [selectedForestId, setSelectedForestId] = useState<string | null>(
+    currentForestId || null
+  );
   const [newForestName, setNewForestName] = useState("");
   const [newForestDesc, setNewForestDesc] = useState("");
+  const [newForestPrivate, setNewForestPrivate] = useState(false);
   const [forestError, setForestError] = useState("");
+  const [loadingForests, setLoadingForests] = useState(false);
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -62,11 +84,38 @@ export default function MenuBar({
     setFormType(null);
   };
 
-  const handleOpenChangeForest = () => {
+  const handleOpenChangeForest = async () => {
     setChangeForestOpen(true);
+    setLoadingForests(true);
+    try {
+      const res = await fetch("/api/forests");
+      if (res.ok) {
+        const data = await res.json();
+        setForests(data);
+      } else {
+        console.error("Failed to fetch forests:", res.status);
+      }
+    } catch (error) {
+      console.error("Error fetching forests:", error);
+    } finally {
+      setLoadingForests(false);
+    }
   };
 
   const handleCloseChangeForest = () => {
+    setChangeForestOpen(false);
+  };
+
+  const handleSelectForest = (forestId: string | null) => {
+    setSelectedForestId(forestId);
+  };
+
+  const handleSwitchForest = () => {
+    if (selectedForestId === null) {
+      router.push("/");
+    } else {
+      router.push(`/?forest=${selectedForestId}`);
+    }
     setChangeForestOpen(false);
   };
 
@@ -82,6 +131,7 @@ export default function MenuBar({
     setCreateForestOpen(false);
     setNewForestName("");
     setNewForestDesc("");
+    setNewForestPrivate(false);
     setForestError("");
   };
 
@@ -98,12 +148,14 @@ export default function MenuBar({
         body: JSON.stringify({
           name: newForestName.trim(),
           description: newForestDesc.trim(),
+          isPrivate: newForestPrivate,
         }),
       });
 
       if (res.ok) {
+        const newForest = await res.json();
         handleCloseCreateForest();
-        window.location.reload();
+        router.push(`/?forest=${newForest.id}`);
       } else {
         const error = await res.json();
         setForestError(error.error || "Failed to create forest");
@@ -112,17 +164,6 @@ export default function MenuBar({
       console.error("Error creating forest:", error);
       setForestError("An error occurred while creating the forest");
     }
-  };
-
-  const getForestName = (type: ForestType): string => {
-    const names = {
-      "deep-woods": "Ancient Deep Woods",
-      "misty-grove": "Misty Grove",
-      "autumn-forest": "Autumn Forest",
-      "pine-forest": "Pine Forest",
-      "oak-grove": "Oak Grove",
-    };
-    return names[type];
   };
 
   return (
@@ -143,7 +184,7 @@ export default function MenuBar({
             }}
           >
             <Forest fontSize="small" />
-            {getForestName(currentForest)}
+            {currentForestName || "All Forests"}
           </Typography>
         </Box>
 
@@ -281,7 +322,7 @@ export default function MenuBar({
           open={changeForestOpen}
           onClose={handleCloseChangeForest}
           fullWidth
-          maxWidth="md"
+          maxWidth="sm"
         >
           <DialogTitle sx={{ textAlign: "center", pt: 3 }}>
             <Typography variant="h4" sx={{ color: "#4A6741", fontWeight: 700 }}>
@@ -291,77 +332,104 @@ export default function MenuBar({
               Switch to a different forest realm
             </Typography>
           </DialogTitle>
-          <DialogContent sx={{ p: 4 }}>
+          <DialogContent sx={{ p: 2 }}>
+            {loadingForests ? (
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <Typography>Loading forests...</Typography>
+              </Box>
+            ) : (
+              <List>
+                {/* All Forests option */}
+                <ListItemButton
+                  selected={selectedForestId === null}
+                  onClick={() => handleSelectForest(null)}
+                  sx={{
+                    borderRadius: "8px",
+                    mb: 1,
+                    border:
+                      selectedForestId === null
+                        ? "2px solid #4A6741"
+                        : "1px solid #E0E0E0",
+                    "&.Mui-selected": {
+                      bgcolor: "rgba(74, 103, 65, 0.1)",
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary="🌍 All Forests"
+                    secondary="View posts from all forests"
+                    primaryTypographyProps={{ fontWeight: 600 }}
+                  />
+                </ListItemButton>
+
+                {/* Forest list */}
+                {forests.map((forest) => (
+                  <ListItemButton
+                    key={forest.id}
+                    selected={selectedForestId === forest.id}
+                    onClick={() => handleSelectForest(forest.id)}
+                    sx={{
+                      borderRadius: "8px",
+                      mb: 1,
+                      border:
+                        selectedForestId === forest.id
+                          ? "2px solid #4A6741"
+                          : "1px solid #E0E0E0",
+                      "&.Mui-selected": {
+                        bgcolor: "rgba(74, 103, 65, 0.1)",
+                      },
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
+                          <span>{forest.isPrivate ? "🔒" : "🌲"}</span>
+                          <span>{forest.name}</span>
+                        </Box>
+                      }
+                      secondary={
+                        forest.description || `${forest._count.posts} posts`
+                      }
+                      primaryTypographyProps={{ fontWeight: 600 }}
+                    />
+                  </ListItemButton>
+                ))}
+
+                {forests.length === 0 && (
+                  <Box sx={{ textAlign: "center", py: 4 }}>
+                    <Typography variant="body2" sx={{ color: "#6B8B5A" }}>
+                      No forests created yet. Create your first forest!
+                    </Typography>
+                  </Box>
+                )}
+              </List>
+            )}
+
             <Box
               sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, 1fr)",
-                  md: "repeat(3, 1fr)",
-                },
-                gap: 3,
-                mt: 2,
+                mt: 3,
+                display: "flex",
+                gap: 2,
+                justifyContent: "flex-end",
               }}
             >
-              <ForestSection
-                type="deep-woods"
-                title="Ancient Deep Woods"
-                description="The heart of the forest where ancient wisdom and deep thoughts flourish. Perfect for philosophical discussions and profound insights."
-                isActive={currentForest === "deep-woods"}
-                onClick={() => setCurrentForest("deep-woods")}
-              />
-
-              <ForestSection
-                type="misty-grove"
-                title="Misty Grove"
-                description="A serene and contemplative space shrouded in gentle mist. Ideal for reflective thoughts and peaceful conversations."
-                isActive={currentForest === "misty-grove"}
-                onClick={() => setCurrentForest("misty-grove")}
-              />
-
-              <ForestSection
-                type="autumn-forest"
-                title="Autumn Forest"
-                description="Where golden leaves fall like shared memories. A place for warm, nostalgic discussions and seasonal reflections."
-                isActive={currentForest === "autumn-forest"}
-                onClick={() => setCurrentForest("autumn-forest")}
-              />
-
-              <ForestSection
-                type="pine-forest"
-                title="Pine Forest"
-                description="Tall pines reaching toward the sky. Home to evergreen thoughts that persist through all seasons."
-                isActive={currentForest === "pine-forest"}
-                onClick={() => setCurrentForest("pine-forest")}
-              />
-
-              <ForestSection
-                type="oak-grove"
-                title="Oak Grove"
-                description="Mighty oaks forming a sacred circle. A gathering place for community wisdom and enduring conversations."
-                isActive={currentForest === "oak-grove"}
-                onClick={() => setCurrentForest("oak-grove")}
-              />
-            </Box>
-
-            <Box sx={{ mt: 4, textAlign: "center" }}>
-              <Typography variant="body2" sx={{ color: "#6B8B5A", mb: 3 }}>
-                Currently exploring:{" "}
-                <strong>{getForestName(currentForest)}</strong>
-              </Typography>
+              <Button
+                onClick={handleCloseChangeForest}
+                sx={{ color: "#6B8B5A" }}
+              >
+                Cancel
+              </Button>
               <Button
                 variant="contained"
-                onClick={handleCloseChangeForest}
+                onClick={handleSwitchForest}
                 sx={{
                   bgcolor: "#4A6741",
                   "&:hover": { bgcolor: "#6B8B5A" },
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: "25px",
                 }}
               >
-                🌲 Switch to {getForestName(currentForest)}
+                Switch Forest
               </Button>
             </Box>
           </DialogContent>

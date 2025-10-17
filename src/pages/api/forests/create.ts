@@ -22,7 +22,7 @@ export default async function handler(
       return res.status(401).json({ error: "Invalid token" });
     }
 
-    const { name, description } = req.body;
+    const { name, description, isPrivate } = req.body;
 
     if (!name || name.trim().length === 0) {
       return res.status(400).json({ error: "Forest name is required" });
@@ -32,6 +32,7 @@ export default async function handler(
       data: {
         name: name.trim(),
         description: description?.trim() || null,
+        isPrivate: isPrivate === true,
         creatorId: decoded.userId,
       },
     });

@@ -66,6 +66,8 @@ export default function UserProfile({
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
+        currentForestId={null}
+        currentForestName={null}
       />
 
       <Box

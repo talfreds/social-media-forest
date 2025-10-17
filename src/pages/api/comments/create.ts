@@ -26,17 +26,30 @@ export default async function handler(
 
     const { content, postId, parentId } = req.body;
 
+    // Validate postId
+    if (!postId || typeof postId !== "string" || postId.trim().length === 0) {
+      return res.status(400).json({ error: "Invalid post ID" });
+    }
+
+    // Validate parentId if provided
+    if (
+      parentId &&
+      (typeof parentId !== "string" || parentId.trim().length === 0)
+    ) {
+      return res.status(400).json({ error: "Invalid parent comment ID" });
+    }
+
     const comment = await prisma.comment.create({
       data: {
         content,
         authorId: userId,
-        postId: Number(postId),
-        parentId: parentId ? Number(parentId) : null,
+        postId: postId,
+        parentId: parentId || null,
       },
     });
     res.status(201).json(comment);
   } catch (error) {
     console.error("Comment creation error:", error);
-    res.status(401).json({ error: "Invalid token or authentication error" });
+    res.status(500).json({ error: "Failed to create comment" });
   }
 }

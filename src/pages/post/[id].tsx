@@ -82,6 +82,8 @@ export default function PostPage({
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
+        currentForestId={post.forest?.id || null}
+        currentForestName={post.forest?.name || null}
       />
 
       {/* Forest Background */}

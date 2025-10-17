@@ -21,7 +21,15 @@ export default async function handler(
         content,
         location, // { lat, lon }
         authorId: user.userId,
-        forestId: forestId ? Number(forestId) : null,
+        forestId: forestId || null,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
     res.status(201).json(post);

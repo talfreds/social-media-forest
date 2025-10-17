@@ -25,19 +25,19 @@ import { forestBackgrounds } from "../lib/theme";
 import prisma from "../lib/prisma";
 
 type Comment = {
-  id: number | string;
+  id: string;
   content: string;
   author: { id: string; name: string | null };
   replies?: Comment[];
 };
 
 type Post = {
-  id: number | string;
+  id: string;
   content: string;
   author: { id: string; name: string | null };
   comments: Comment[];
   location?: { lat: number; lon: number };
-  forestId: number | string | null;
+  forestId: string | null;
 };
 
 type Props = {
@@ -50,6 +50,8 @@ type Props = {
   initialCity: string;
   initialLat: number;
   initialLon: number;
+  currentForestId: string | null;
+  currentForestName: string | null;
 };
 
 export default function Home({
@@ -62,36 +64,18 @@ export default function Home({
   initialCity,
   initialLat,
   initialLon,
+  currentForestId,
+  currentForestName,
 }: Props) {
   const [newPost, setNewPost] = useState("");
   const [userCity, setUserCity] = useState(initialCity);
-  const [currentForestId, setCurrentForestId] = useState<number | null>(null);
   const [posts, setPosts] = useState<Post[]>(allPosts);
   // Location-specific posting is temporarily disabled; we'll re-introduce later
-  const [replyInputs, setReplyInputs] = useState<Record<number, string>>({}); // Reply input per post
+  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({}); // Reply input per post
 
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-            );
-            const data = await res.json();
-            const city = data.address.city || data.address.town || "Unknown";
-            setUserCity(city);
-          } catch (error) {
-            console.error("Geolocation fetch error:", error);
-          }
-        },
-        (error) => {
-          console.log("Geolocation denied:", error.message);
-        }
-      );
-    }
-  }, []);
+  // Removed automatic geolocation request - it was causing browser security violations
+  // Geolocation should only be requested in response to explicit user action
+  // The initialCity from server-side IP geolocation is sufficient for now
 
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,10 +110,16 @@ export default function Home({
 
       if (res.ok) {
         const newPostData = await res.json();
-        // Replace temp post with real one
+        // Replace temp post with real one, ensuring author is included
         setPosts((prevPosts) =>
           prevPosts.map((post) =>
-            post.id === tempPost.id ? { ...newPostData, comments: [] } : post
+            post.id === tempPost.id
+              ? {
+                  ...newPostData,
+                  comments: [],
+                  author: newPostData.author || tempPost.author, // Fallback to temp author
+                }
+              : post
           )
         );
       } else {
@@ -149,18 +139,24 @@ export default function Home({
   };
 
   const handleReplySubmit = async (
-    postId: number | string,
-    parentId: number | string | null,
+    postId: string,
+    parentId: string | null,
     content: string
   ) => {
     if (!content.trim()) return;
 
+    // Prevent commenting on temporary posts
+    if (typeof postId === "string" && postId.startsWith("temp-")) {
+      console.error("Cannot comment on a post that hasn't been saved yet");
+      return;
+    }
+
     // Optimistic update - add comment immediately
     const tempComment: Comment = {
-      id: Date.now(), // Temporary ID
+      id: Date.now().toString(), // Temporary ID
       content,
       author: {
-        id: currentUser?.id || 0,
+        id: currentUser?.id || "unknown",
         name: currentUser?.name || "You",
       },
       replies: [],
@@ -169,7 +165,7 @@ export default function Home({
     // Helper function to add comment to tree
     const addCommentToTree = (
       comments: Comment[],
-      parentId: number | null
+      parentId: string | null
     ): Comment[] => {
       if (parentId === null) {
         // Top-level comment
@@ -266,6 +262,8 @@ export default function Home({
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
+        currentForestId={currentForestId}
+        currentForestName={currentForestName}
       />
 
       {/* Forest Background */}
@@ -429,7 +427,10 @@ export default function Home({
                   >
                     <TextField
                       value={newPost}
-                      onChange={(e) => setNewPost(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setNewPost(value);
+                      }}
                       placeholder="What wisdom would you like to share with the forest?"
                       fullWidth
                       multiline
@@ -573,6 +574,10 @@ export const getServerSideProps: GetServerSideProps<
   const token = cookies.authToken;
   const decodedUser = token ? verifyToken(token) : null;
 
+  // Get forest ID from query params
+  const forestIdParam = context.query.forest as string | undefined;
+  const currentForestId = forestIdParam || null;
+
   // Fetch current user details if logged in
   let currentUser = null;
   if (decodedUser) {
@@ -581,6 +586,16 @@ export const getServerSideProps: GetServerSideProps<
       select: { id: true, name: true },
     });
     currentUser = userRecord;
+  }
+
+  // Fetch forest name if a forest is selected
+  let currentForestName = null;
+  if (currentForestId) {
+    const forest = await prisma.forest.findUnique({
+      where: { id: currentForestId },
+      select: { name: true },
+    });
+    currentForestName = forest?.name || null;
   }
 
   const ip =
@@ -674,6 +689,8 @@ export const getServerSideProps: GetServerSideProps<
       initialCity,
       initialLat,
       initialLon,
+      currentForestId,
+      currentForestName,
     },
   };
 };

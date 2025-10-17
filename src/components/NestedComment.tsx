@@ -23,7 +23,7 @@ interface Author {
 }
 
 interface NestedCommentData {
-  id: number | string;
+  id: string;
   content: string;
   author: Author & { id?: string };
   replies?: NestedCommentData[];
@@ -31,14 +31,10 @@ interface NestedCommentData {
 
 interface NestedCommentProps {
   comment: NestedCommentData;
-  postId: number | string;
+  postId: string;
   isLoggedIn: boolean;
   level?: number;
-  onReply: (
-    postId: number | string,
-    parentId: number | string,
-    content: string
-  ) => void;
+  onReply: (postId: string, parentId: string, content: string) => void;
   theme: any;
 }
 
@@ -52,7 +48,8 @@ const NestedComment: React.FC<NestedCommentProps> = ({
 }) => {
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [replyText, setReplyText] = useState("");
-  const [isCollapsed, setIsCollapsed] = useState(level > 1); // Auto-collapse comments deeper than 1 level
+  // Collapse all non-root comments by default (hide any comment-to-comment replies initially)
+  const [isCollapsed, setIsCollapsed] = useState(level > 0);
 
   const handleReplySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,8 +188,8 @@ const NestedComment: React.FC<NestedCommentProps> = ({
               </Button>
             )}
 
-            {/* Show collapsed count */}
-            {isCollapsed && (
+            {/* Show collapsed count - only when there are replies (>0) */}
+            {isCollapsed && comment.replies && comment.replies.length > 0 && (
               <Typography
                 variant="caption"
                 sx={{
@@ -203,11 +200,9 @@ const NestedComment: React.FC<NestedCommentProps> = ({
                 }}
                 onClick={() => setIsCollapsed(false)}
               >
-                {comment.replies
-                  ? `${comment.replies.length} hidden ${
-                      comment.replies.length === 1 ? "reply" : "replies"
-                    }`
-                  : "Show thread"}
+                {`${comment.replies.length} hidden ${
+                  comment.replies.length === 1 ? "reply" : "replies"
+                }`}
               </Typography>
             )}
           </Box>

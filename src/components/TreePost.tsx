@@ -23,25 +23,25 @@ import NestedComment from "./NestedComment";
 import Link from "next/link";
 
 interface Comment {
-  id: number | string;
+  id: string;
   content: string;
   author: { id: string; name: string | null };
   replies?: Comment[];
 }
 
 interface TreePostProps {
-  id: number | string;
+  id: string;
   content: string;
   author: { id: string; name: string | null };
   comments: Comment[];
   isLoggedIn: boolean;
   onReply: (
-    postId: number | string,
-    parentId: number | string | null,
+    postId: string,
+    parentId: string | null,
     content: string
   ) => Promise<void>;
-  replyInputs: Record<number | string, string>;
-  setReplyInputs: (inputs: Record<number | string, string>) => void;
+  replyInputs: Record<string, string>;
+  setReplyInputs: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 }
 
 const TreePost: React.FC<TreePostProps> = ({
@@ -66,8 +66,8 @@ const TreePost: React.FC<TreePostProps> = ({
   };
 
   const handleNestedReply = (
-    postId: number,
-    parentId: number,
+    postId: string,
+    parentId: string,
     content: string
   ) => {
     onReply(postId, parentId, content);
@@ -281,9 +281,10 @@ const TreePost: React.FC<TreePostProps> = ({
               >
                 <TextField
                   value={replyInputs[id] || ""}
-                  onChange={(e) =>
-                    setReplyInputs({ ...replyInputs, [id]: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setReplyInputs((prev) => ({ ...prev, [id]: value }));
+                  }}
                   placeholder="Add a branch to this tree..."
                   fullWidth
                   variant="outlined"
