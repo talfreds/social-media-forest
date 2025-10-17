@@ -6,20 +6,22 @@ import {
   Box,
   Container,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
   TextField,
   Button,
-  Divider,
   Snackbar,
   Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Card,
+  CardContent,
+  IconButton,
 } from "@mui/material";
+import { Send, Forest, Nature } from "@mui/icons-material";
 import MenuBar from "../components/MenuBar";
+import TreePost from "../components/TreePost";
+import { forestBackgrounds } from "../lib/theme";
 import prisma from "../lib/prisma";
 
 type Post = {
@@ -127,200 +129,294 @@ export default function Home({
         setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
       />
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        {/* Nearby removed for now */}
 
-        {/* All Posts Section */}
-        <Box sx={{ mx: { xs: 1, sm: 2 }, mb: 6 }}>
-          <Typography
-            variant="h4"
+      {/* Forest Background */}
+      <Box
+        className="forest-background"
+        sx={{
+          minHeight: "100vh",
+          background: forestBackgrounds.deepWoods,
+          backgroundAttachment: "fixed",
+          position: "relative",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `
+              radial-gradient(ellipse at 20% 80%, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(0, 0, 0, 0.3) 0%, transparent 50%)
+            `,
+            pointerEvents: "none",
+          },
+        }}
+      >
+        {/* Floating Forest Particles */}
+        {[...Array(5)].map((_, i) => (
+          <Box
+            key={i}
+            className="forest-particle"
             sx={{
-              fontFamily: "'Oswald', sans-serif",
-              color: darkMode ? "#90A4AE" : "#546E7A",
-              mb: 2,
-              textTransform: "uppercase",
-              fontWeight: 600,
+              left: `${20 + i * 15}%`,
+              animationDelay: `${i * 1.5}s`,
+            }}
+          />
+        ))}
+
+        <Container
+          maxWidth="lg"
+          sx={{ py: 4, position: "relative", zIndex: 1 }}
+        >
+          {/* Forest Header */}
+          <Box sx={{ textAlign: "center", mb: 6, mt: 2 }}>
+            <Typography
+              variant="h2"
+              sx={{
+                fontSize: { xs: "2rem", sm: "3rem" },
+                fontWeight: 700,
+                color: "#E8F5E8",
+                mb: 2,
+                textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 2,
+              }}
+            >
+              <Forest sx={{ fontSize: "inherit" }} />
+              Ancient Forest
+              <Forest sx={{ fontSize: "inherit" }} />
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                color: "#B8D4B8",
+                fontSize: { xs: "1rem", sm: "1.25rem" },
+                fontWeight: 400,
+                maxWidth: "600px",
+                mx: "auto",
+                textShadow: "1px 1px 2px rgba(0, 0, 0, 0.5)",
+              }}
+            >
+              Where thoughts grow like mighty trees and conversations branch
+              outward
+            </Typography>
+          </Box>
+
+          {/* Tree Grove (Posts) */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+              mx: "auto",
+              maxWidth: "800px",
             }}
           >
-            MISC
-          </Typography>
-          {allPosts.length > 0 ? (
-            allPosts.map((post) => (
-              <Box
-                key={post.id}
+            {allPosts.length > 0 ? (
+              allPosts.map((post) => (
+                <TreePost
+                  key={post.id}
+                  id={post.id}
+                  content={post.content}
+                  author={post.author}
+                  comments={post.comments}
+                  isLoggedIn={isLoggedIn}
+                  onReply={handleReplySubmit}
+                  replyInputs={replyInputs}
+                  setReplyInputs={setReplyInputs}
+                />
+              ))
+            ) : (
+              <Card
                 sx={{
-                  mb: 3,
-                  p: 2,
-                  border: "1px solid #343536",
-                  borderRadius: "4px",
-                  backgroundColor: "#1A1A1B",
+                  maxWidth: "500px",
+                  mx: "auto",
+                  backgroundColor: "rgba(26, 45, 26, 0.9)",
+                  backdropFilter: "blur(10px)",
+                  border: "2px solid #4A6741",
+                  borderRadius: "16px",
+                  textAlign: "center",
+                  py: 6,
                 }}
               >
-                <Typography
-                  variant="body1"
-                  fontWeight="bold"
-                  sx={{
-                    fontFamily: "'Roboto Condensed', sans-serif",
-                    color: darkMode ? "#CFD8DC" : "#263238",
-                    mb: 1,
-                  }}
-                >
-                  {post.content} - {post.author.name || "Anonymous"}
-                </Typography>
-                <List sx={{ p: 0 }}>
-                  {post.comments.map((comment) => (
-                    <ListItem
-                      key={comment.id}
-                      sx={{
-                        py: 1,
-                        pl: 3,
-                        pr: 2,
-                        borderBottom: "1px solid #343536",
-                      }}
-                    >
-                      <ListItemText
-                        primary={
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontFamily: "'Roboto', sans-serif",
-                              color: darkMode ? "#B0BEC5" : "#546E7A",
-                            }}
-                          >
-                            {comment.content} -{" "}
-                            {comment.author.name || "Anonymous"}
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-                {isLoggedIn && (
+                <CardContent>
+                  <Nature sx={{ fontSize: 64, color: "#66BB6A", mb: 2 }} />
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      color: "#E8F5E8",
+                      mb: 2,
+                      fontWeight: 600,
+                    }}
+                  >
+                    The Forest Awaits
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: "#B8D4B8",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    Be the first to plant a seed of conversation. Your thoughts
+                    will grow into mighty trees that others can branch from.
+                  </Typography>
+                </CardContent>
+              </Card>
+            )}
+          </Box>
+
+          {/* Plant a New Tree (Post Creation) */}
+          {isLoggedIn && (
+            <Box sx={{ mt: 8, textAlign: "center" }}>
+              <Card
+                sx={{
+                  maxWidth: "600px",
+                  mx: "auto",
+                  backgroundColor: "rgba(26, 45, 26, 0.95)",
+                  backdropFilter: "blur(10px)",
+                  border: "2px solid #4A6741",
+                  borderRadius: "16px",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+                }}
+              >
+                <CardContent sx={{ p: 4 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "#E8F5E8",
+                      mb: 3,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <Forest />
+                    Plant a New Tree
+                    <Forest />
+                  </Typography>
+
                   <Box
                     component="form"
-                    onSubmit={(e) => handleReplySubmit(post.id, e)}
-                    sx={{ mt: 1 }}
+                    onSubmit={handlePostSubmit}
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 2,
+                    }}
                   >
                     <TextField
-                      value={replyInputs[post.id] || ""}
-                      onChange={(e) =>
-                        setReplyInputs((prev) => ({
-                          ...prev,
-                          [post.id]: e.target.value,
-                        }))
-                      }
-                      placeholder="Add a reply..."
+                      value={newPost}
+                      onChange={(e) => setNewPost(e.target.value)}
+                      placeholder="What wisdom would you like to share with the forest?"
                       fullWidth
+                      multiline
+                      rows={3}
                       variant="outlined"
-                      size="small"
                       sx={{
-                        backgroundColor: darkMode ? "#37474F" : "#ECEFF1",
                         "& .MuiOutlinedInput-root": {
+                          backgroundColor: "rgba(15, 26, 15, 0.8)",
                           "& fieldset": {
-                            borderColor: darkMode ? "#78909C" : "#455A64",
+                            borderColor: "#4A6741",
+                            borderRadius: "12px",
+                            borderWidth: "2px",
                           },
-                          "&:hover fieldset": { borderColor: "#FF7043" },
-                          "&.Mui-focused fieldset": { borderColor: "#FF7043" },
+                          "&:hover fieldset": {
+                            borderColor: "#6B8B5A",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: "#66BB6A",
+                            borderWidth: "2px",
+                          },
+                        },
+                        "& .MuiInputBase-input": {
+                          color: "#E8F5E8",
+                          fontSize: "1rem",
+                          fontFamily: "'Quicksand', sans-serif",
                         },
                       }}
                     />
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      sx={{
-                        mt: 1,
-                        backgroundColor: darkMode ? "#FF7043" : "#BF360C",
-                        color: "#fff",
-                        fontFamily: "'Oswald', sans-serif",
-                      }}
-                    >
-                      Reply
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-            ))
-          ) : (
-            <Typography
-              variant="body1"
-              sx={{
-                fontFamily: "'Roboto', sans-serif",
-                color: darkMode ? "#78909C" : "#78909C",
-                ml: 2,
-              }}
-            >
-              No posts yet.
-            </Typography>
-          )}
-        </Box>
 
-        {/* Post Input Moved to Bottom */}
-        {isLoggedIn && (
-          <Box
-            component="form"
-            onSubmit={handlePostSubmit}
-            sx={{ mx: { xs: 1, sm: 2 }, maxWidth: "600px" }}
-          >
-            <TextField
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              placeholder="Create a post..."
-              fullWidth
-              variant="outlined"
-              size="medium"
-              sx={{
-                backgroundColor: darkMode ? "#37474F" : "#ECEFF1",
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: darkMode ? "#78909C" : "#455A64",
-                    borderWidth: "2px",
-                  },
-                  "&:hover fieldset": { borderColor: "#FF7043" },
-                  "&.Mui-focused fieldset": { borderColor: "#FF7043" },
-                },
-                "& .MuiInputBase-input": {
-                  fontFamily: "'Roboto Condensed', sans-serif",
-                  color: darkMode ? "#CFD8DC" : "#263238",
-                  fontWeight: 500,
-                },
-              }}
-            />
-            <Typography
-              variant="caption"
-              sx={{
-                mt: 1,
-                display: "block",
-                color: darkMode ? "#90A4AE" : "#546E7A",
-              }}
-            >
-              {/* Location-specific posting to be implemented. */}
-            </Typography>
-            <Button
-              type="submit"
-              variant="contained"
-              sx={{
-                mt: 1,
-                backgroundColor: darkMode ? "#FF7043" : "#BF360C",
-                color: "#fff",
-                fontFamily: "'Oswald', sans-serif",
-                fontSize: "1rem",
-                padding: "8px 20px",
-                "&:hover": { backgroundColor: "#FF5722" },
-              }}
-            >
-              Post
-            </Button>
-          </Box>
-        )}
-        {!isLoggedIn && (
-          <Typography
-            variant="body2"
-            sx={{ mt: 2, color: darkMode ? "#B0BEC5" : "#546E7A" }}
-          >
-            Log in to create your first post.
-          </Typography>
-        )}
-      </Container>
+                    <Box sx={{ display: "flex", justifyContent: "center" }}>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        size="large"
+                        disabled={!newPost.trim()}
+                        sx={{
+                          bgcolor: "#4A6741",
+                          color: "#E8F5E8",
+                          fontSize: "1.1rem",
+                          fontWeight: 600,
+                          px: 4,
+                          py: 1.5,
+                          borderRadius: "25px",
+                          textTransform: "none",
+                          "&:hover": {
+                            bgcolor: "#6B8B5A",
+                          },
+                          "&:disabled": {
+                            bgcolor: "#2E4A2E",
+                            color: "#90A4AE",
+                          },
+                        }}
+                      >
+                        🌱 Plant Your Tree
+                      </Button>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
+          )}
+
+          {!isLoggedIn && (
+            <Box sx={{ textAlign: "center", mt: 8 }}>
+              <Card
+                sx={{
+                  maxWidth: "500px",
+                  mx: "auto",
+                  backgroundColor: "rgba(26, 45, 26, 0.9)",
+                  backdropFilter: "blur(10px)",
+                  border: "2px solid #4A6741",
+                  borderRadius: "16px",
+                  py: 6,
+                }}
+              >
+                <CardContent>
+                  <Nature sx={{ fontSize: 48, color: "#66BB6A", mb: 2 }} />
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "#E8F5E8",
+                      mb: 2,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Join the Forest Community
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "#B8D4B8",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    Log in to plant your first tree and watch your thoughts grow
+                    into conversations.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Box>
+          )}
+        </Container>
+      </Box>
     </>
   );
 }

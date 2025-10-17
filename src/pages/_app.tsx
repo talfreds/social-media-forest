@@ -4,6 +4,7 @@ import { ThemeProvider, CssBaseline } from "@mui/material";
 import { lightTheme, darkTheme } from "../lib/theme";
 import { useState, useMemo } from "react";
 import Head from "next/head";
+import "../styles/forest-animations.css";
 
 export default function MyApp({ Component, pageProps }: AppProps) {
   const [darkMode, setDarkMode] = useState(true);
@@ -20,7 +21,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
           crossOrigin=""
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </Head>

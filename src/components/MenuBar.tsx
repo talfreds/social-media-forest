@@ -21,6 +21,7 @@ import { Brightness7, Brightness4 } from "@mui/icons-material";
 import RegisterForm from "./RegisterForm";
 import LoginForm from "./LoginForm";
 import LogoutButton from "./LogoutButton";
+import ForestSection, { ForestType } from "./ForestSection";
 import Image from "next/image";
 
 interface MenuBarProps {
@@ -38,6 +39,7 @@ export default function MenuBar({
   const [formType, setFormType] = useState<"register" | "login" | null>(null);
   const [showLoginError, setShowLoginError] = useState(false);
   const [newSectionOpen, setNewSectionOpen] = useState(false);
+  const [currentForest, setCurrentForest] = useState<ForestType>("deep-woods");
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -61,6 +63,17 @@ export default function MenuBar({
   };
 
   const handleCloseNewSection = () => setNewSectionOpen(false);
+
+  const getForestName = (type: ForestType): string => {
+    const names = {
+      "deep-woods": "Ancient Deep Woods",
+      "misty-grove": "Misty Grove",
+      "autumn-forest": "Autumn Forest",
+      "pine-forest": "Pine Forest",
+      "oak-grove": "Oak Grove",
+    };
+    return names[type];
+  };
 
   return (
     <AppBar position="static" color="default" elevation={1}>
@@ -173,17 +186,94 @@ export default function MenuBar({
           </Alert>
         </Snackbar>
 
-        <Dialog open={newSectionOpen} onClose={handleCloseNewSection} fullWidth>
-          <DialogTitle>Create New Section</DialogTitle>
-          <DialogContent>
-            <Typography variant="body2">
-              Section creation coming soon. For now, you can post in the
-              community feed below.
+        <Dialog
+          open={newSectionOpen}
+          onClose={handleCloseNewSection}
+          fullWidth
+          maxWidth="md"
+        >
+          <DialogTitle sx={{ textAlign: "center", pt: 3 }}>
+            <Typography variant="h4" sx={{ color: "#4A6741", fontWeight: 700 }}>
+              🌲 Choose Your Forest 🌲
             </Typography>
+            <Typography variant="body1" sx={{ mt: 1, color: "#6B8B5A" }}>
+              Select a forest realm to explore and contribute to
+            </Typography>
+          </DialogTitle>
+          <DialogContent sx={{ p: 4 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(3, 1fr)",
+                },
+                gap: 3,
+                mt: 2,
+              }}
+            >
+              <ForestSection
+                type="deep-woods"
+                title="Ancient Deep Woods"
+                description="The heart of the forest where ancient wisdom and deep thoughts flourish. Perfect for philosophical discussions and profound insights."
+                isActive={currentForest === "deep-woods"}
+                onClick={() => setCurrentForest("deep-woods")}
+              />
+
+              <ForestSection
+                type="misty-grove"
+                title="Misty Grove"
+                description="A serene and contemplative space shrouded in gentle mist. Ideal for reflective thoughts and peaceful conversations."
+                isActive={currentForest === "misty-grove"}
+                onClick={() => setCurrentForest("misty-grove")}
+              />
+
+              <ForestSection
+                type="autumn-forest"
+                title="Autumn Forest"
+                description="Where golden leaves fall like shared memories. A place for warm, nostalgic discussions and seasonal reflections."
+                isActive={currentForest === "autumn-forest"}
+                onClick={() => setCurrentForest("autumn-forest")}
+              />
+
+              <ForestSection
+                type="pine-forest"
+                title="Pine Forest"
+                description="Tall pines reaching toward the sky. Home to evergreen thoughts that persist through all seasons."
+                isActive={currentForest === "pine-forest"}
+                onClick={() => setCurrentForest("pine-forest")}
+              />
+
+              <ForestSection
+                type="oak-grove"
+                title="Oak Grove"
+                description="Mighty oaks forming a sacred circle. A gathering place for community wisdom and enduring conversations."
+                isActive={currentForest === "oak-grove"}
+                onClick={() => setCurrentForest("oak-grove")}
+              />
+            </Box>
+
+            <Box sx={{ mt: 4, textAlign: "center" }}>
+              <Typography variant="body2" sx={{ color: "#6B8B5A", mb: 2 }}>
+                Currently exploring:{" "}
+                <strong>{getForestName(currentForest)}</strong>
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={handleCloseNewSection}
+                sx={{
+                  bgcolor: "#4A6741",
+                  "&:hover": { bgcolor: "#6B8B5A" },
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: "25px",
+                }}
+              >
+                Enter {getForestName(currentForest)}
+              </Button>
+            </Box>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseNewSection}>Close</Button>
-          </DialogActions>
         </Dialog>
       </Toolbar>
     </AppBar>
