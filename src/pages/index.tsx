@@ -12,8 +12,12 @@ import {
   TextField,
   Button,
   Divider,
-  Checkbox,
-  FormControlLabel,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import MenuBar from "../components/MenuBar";
 import prisma from "../lib/prisma";
@@ -49,25 +53,21 @@ export default function Home({
 }: Props) {
   const [newPost, setNewPost] = useState("");
   const [userCity, setUserCity] = useState(initialCity);
-  const [userLat, setUserLat] = useState(initialLat);
-  const [userLon, setUserLon] = useState(initialLon);
-  const [useLocation, setUseLocation] = useState(true); // Checkbox state
+  // Location-specific posting is temporarily disabled; we'll re-introduce later
   const [replyInputs, setReplyInputs] = useState<Record<number, string>>({}); // Reply input per post
 
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          const { latitude, longitude } = position.coords;
           try {
+            const { latitude, longitude } = position.coords;
             const res = await fetch(
               `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
             );
             const data = await res.json();
             const city = data.address.city || data.address.town || "Unknown";
             setUserCity(city);
-            setUserLat(latitude);
-            setUserLon(longitude);
           } catch (error) {
             console.error("Geolocation fetch error:", error);
           }
@@ -85,10 +85,7 @@ export default function Home({
       const res = await fetch("/api/posts/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: newPost,
-          location: useLocation ? { lat: userLat, lon: userLon } : null,
-        }),
+        body: JSON.stringify({ content: newPost, location: null }),
       });
       if (res.ok) {
         window.location.reload();
@@ -131,145 +128,7 @@ export default function Home({
         isLoggedIn={isLoggedIn}
       />
       <Container maxWidth="md" sx={{ py: 4 }}>
-        <Typography
-          variant="h1"
-          align="center"
-          gutterBottom
-          sx={{
-            fontFamily: "'Oswald', sans-serif",
-            fontSize: { xs: "2.5rem", sm: "3.5rem" },
-            color: darkMode ? "#B0BEC5" : "#263238",
-            textTransform: "uppercase",
-            letterSpacing: "1.5px",
-            textShadow: "1px 1px 2px rgba(0, 0, 0, 0.4)",
-          }}
-        >
-          Scribbles
-        </Typography>
-
-        {/* Nearby Posts Section */}
-        <Box sx={{ mx: { xs: 1, sm: 2 }, mb: 6 }}>
-          <Typography
-            variant="h4"
-            sx={{
-              fontFamily: "'Oswald', sans-serif",
-              color: darkMode ? "#90A4AE" : "#546E7A",
-              mb: 2,
-              textTransform: "uppercase",
-              fontWeight: 600,
-            }}
-          >
-            {userCity} (Nearby)
-          </Typography>
-          {nearbyPosts.length > 0 ? (
-            nearbyPosts.map((post) => (
-              <Box
-                key={post.id}
-                sx={{
-                  mb: 3,
-                  p: 2,
-                  border: "2px solid",
-                  borderColor: darkMode ? "#546E7A" : "#B0BEC5",
-                  backgroundColor: darkMode ? "#263238" : "#ECEFF1",
-                  boxShadow: "3px 3px 6px rgba(0, 0, 0, 0.2)",
-                }}
-              >
-                <Typography
-                  variant="body1"
-                  fontWeight="bold"
-                  sx={{
-                    fontFamily: "'Roboto Condensed', sans-serif",
-                    color: darkMode ? "#CFD8DC" : "#263238",
-                    mb: 1,
-                  }}
-                >
-                  {post.content} - {post.author.name || "Anonymous"}
-                </Typography>
-                <List sx={{ p: 0 }}>
-                  {post.comments.map((comment) => (
-                    <ListItem
-                      key={comment.id}
-                      sx={{
-                        py: 0.5,
-                        borderTop: "1px solid",
-                        borderColor: darkMode ? "#455A64" : "#CFD8DC",
-                      }}
-                    >
-                      <ListItemText
-                        primary={
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontFamily: "'Roboto', sans-serif",
-                              color: darkMode ? "#B0BEC5" : "#546E7A",
-                            }}
-                          >
-                            {comment.content} -{" "}
-                            {comment.author.name || "Anonymous"}
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-                {isLoggedIn && (
-                  <Box
-                    component="form"
-                    onSubmit={(e) => handleReplySubmit(post.id, e)}
-                    sx={{ mt: 1 }}
-                  >
-                    <TextField
-                      value={replyInputs[post.id] || ""}
-                      onChange={(e) =>
-                        setReplyInputs((prev) => ({
-                          ...prev,
-                          [post.id]: e.target.value,
-                        }))
-                      }
-                      placeholder="Add a reply..."
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      sx={{
-                        backgroundColor: darkMode ? "#37474F" : "#ECEFF1",
-                        "& .MuiOutlinedInput-root": {
-                          "& fieldset": {
-                            borderColor: darkMode ? "#78909C" : "#455A64",
-                          },
-                          "&:hover fieldset": { borderColor: "#FF7043" },
-                          "&.Mui-focused fieldset": { borderColor: "#FF7043" },
-                        },
-                      }}
-                    />
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      sx={{
-                        mt: 1,
-                        backgroundColor: darkMode ? "#FF7043" : "#BF360C",
-                        color: "#fff",
-                        fontFamily: "'Oswald', sans-serif",
-                      }}
-                    >
-                      Reply
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-            ))
-          ) : (
-            <Typography
-              variant="body1"
-              sx={{
-                fontFamily: "'Roboto', sans-serif",
-                color: darkMode ? "#78909C" : "#78909C",
-                ml: 2,
-              }}
-            >
-              No nearby marks yet.
-            </Typography>
-          )}
-        </Box>
+        {/* Nearby removed for now */}
 
         {/* All Posts Section */}
         <Box sx={{ mx: { xs: 1, sm: 2 }, mb: 6 }}>
@@ -283,7 +142,7 @@ export default function Home({
               fontWeight: 600,
             }}
           >
-            All Scribbles
+            MISC
           </Typography>
           {allPosts.length > 0 ? (
             allPosts.map((post) => (
@@ -292,10 +151,9 @@ export default function Home({
                 sx={{
                   mb: 3,
                   p: 2,
-                  border: "2px solid",
-                  borderColor: darkMode ? "#546E7A" : "#B0BEC5",
-                  backgroundColor: darkMode ? "#263238" : "#ECEFF1",
-                  boxShadow: "3px 3px 6px rgba(0, 0, 0, 0.2)",
+                  border: "1px solid #343536",
+                  borderRadius: "4px",
+                  backgroundColor: "#1A1A1B",
                 }}
               >
                 <Typography
@@ -314,9 +172,10 @@ export default function Home({
                     <ListItem
                       key={comment.id}
                       sx={{
-                        py: 0.5,
-                        borderTop: "1px solid",
-                        borderColor: darkMode ? "#455A64" : "#CFD8DC",
+                        py: 1,
+                        pl: 3,
+                        pr: 2,
+                        borderBottom: "1px solid #343536",
                       }}
                     >
                       <ListItemText
@@ -390,7 +249,7 @@ export default function Home({
                 ml: 2,
               }}
             >
-              No marks anywhere yet.
+              No posts yet.
             </Typography>
           )}
         </Box>
@@ -405,7 +264,7 @@ export default function Home({
             <TextField
               value={newPost}
               onChange={(e) => setNewPost(e.target.value)}
-              placeholder={`Mark the wall in ${userCity}...`}
+              placeholder="Create a post..."
               fullWidth
               variant="outlined"
               size="medium"
@@ -426,17 +285,16 @@ export default function Home({
                 },
               }}
             />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={useLocation}
-                  onChange={(e) => setUseLocation(e.target.checked)}
-                  sx={{ color: darkMode ? "#78909C" : "#455A64" }}
-                />
-              }
-              label="Location Specific"
-              sx={{ mt: 1, color: darkMode ? "#CFD8DC" : "#263238" }}
-            />
+            <Typography
+              variant="caption"
+              sx={{
+                mt: 1,
+                display: "block",
+                color: darkMode ? "#90A4AE" : "#546E7A",
+              }}
+            >
+              {/* Location-specific posting to be implemented. */}
+            </Typography>
             <Button
               type="submit"
               variant="contained"
@@ -453,6 +311,14 @@ export default function Home({
               Post
             </Button>
           </Box>
+        )}
+        {!isLoggedIn && (
+          <Typography
+            variant="body2"
+            sx={{ mt: 2, color: darkMode ? "#B0BEC5" : "#546E7A" }}
+          >
+            Log in to create your first post.
+          </Typography>
         )}
       </Container>
     </>

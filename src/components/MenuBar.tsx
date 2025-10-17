@@ -10,11 +10,18 @@ import {
   Typography,
   Switch,
   FormControlLabel,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { Brightness7, Brightness4 } from "@mui/icons-material";
 import RegisterForm from "./RegisterForm";
 import LoginForm from "./LoginForm";
 import LogoutButton from "./LogoutButton";
+import Image from "next/image";
 
 interface MenuBarProps {
   darkMode: boolean;
@@ -29,6 +36,8 @@ export default function MenuBar({
 }: MenuBarProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [formType, setFormType] = useState<"register" | "login" | null>(null);
+  const [showLoginError, setShowLoginError] = useState(false);
+  const [newSectionOpen, setNewSectionOpen] = useState(false);
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -43,95 +52,139 @@ export default function MenuBar({
     setFormType(null);
   };
 
+  const handleOpenNewSection = () => {
+    if (!isLoggedIn) {
+      setShowLoginError(true);
+      return;
+    }
+    setNewSectionOpen(true);
+  };
+
+  const handleCloseNewSection = () => setNewSectionOpen(false);
+
   return (
     <AppBar position="static" color="default" elevation={1}>
-      <Toolbar sx={{ justifyContent: "flex-end", flexWrap: "wrap", gap: 1 }}>
-        {!isLoggedIn ? (
-          <>
-            <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1 } }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={(e) => handleMenuOpen(e, "register")}
-                size="medium"
-                sx={{ minWidth: { xs: "80px", sm: "100px" } }} // Smaller on mobile
+      <Toolbar
+        sx={{ justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Image src="/monkey.svg" alt="Monkey" width={32} height={32} />
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Button variant="outlined" onClick={handleOpenNewSection}>
+            New Section
+          </Button>
+          {!isLoggedIn ? (
+            <>
+              <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1 } }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={(e) => handleMenuOpen(e, "register")}
+                  size="medium"
+                  sx={{ minWidth: { xs: "80px", sm: "100px" } }} // Smaller on mobile
+                >
+                  Register
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={(e) => handleMenuOpen(e, "login")}
+                  size="medium"
+                  sx={{ minWidth: { xs: "80px", sm: "100px" } }}
+                >
+                  Login
+                </Button>
+              </Box>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                PaperProps={{
+                  sx: {
+                    width: "100%",
+                    maxWidth: { xs: "90vw", sm: "300px" }, // 90% viewport width on mobile
+                    mt: 1, // Space below button
+                  },
+                }}
               >
-                Register
-              </Button>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={(e) => handleMenuOpen(e, "login")}
-                size="medium"
-                sx={{ minWidth: { xs: "80px", sm: "100px" } }}
+                <MenuItem
+                  sx={{ p: 0, "&:hover": { backgroundColor: "transparent" } }}
+                >
+                  {formType === "register" && <RegisterForm isVisible={true} />}
+                  {formType === "login" && <LoginForm isVisible={true} />}
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <LogoutButton />
+          )}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={darkMode}
+                onChange={() => setDarkMode(!darkMode)}
+                sx={{
+                  mx: 1, // Consistent spacing around switch
+                  "& .MuiSwitch-switchBase": {
+                    // Base state (unchecked, light mode)
+                    "& .MuiSwitch-thumb": {
+                      bgcolor: "grey.500", // Neutral gray thumb in light mode
+                    },
+                    "& .MuiSwitch-track": {
+                      bgcolor: "grey.300", // Light gray track in light mode
+                    },
+                  },
+                  "& .MuiSwitch-switchBase.Mui-checked": {
+                    // Checked state (dark mode)
+                    "& .MuiSwitch-thumb": {
+                      bgcolor: "grey.800", // Dark gray thumb in dark mode
+                    },
+                    "& .MuiSwitch-track": {
+                      bgcolor: "grey.600", // Darker track in dark mode
+                    },
+                  },
+                }}
+              />
+            }
+            label={
+              <Typography
+                variant="body2"
+                color="text.primary" // Adapts to theme (black in light, white in dark)
+                sx={{ ml: 0.5 }}
               >
-                Login
-              </Button>
-            </Box>
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
-              PaperProps={{
-                sx: {
-                  width: "100%",
-                  maxWidth: { xs: "90vw", sm: "300px" }, // 90% viewport width on mobile
-                  mt: 1, // Space below button
-                },
-              }}
-            >
-              <MenuItem
-                sx={{ p: 0, "&:hover": { backgroundColor: "transparent" } }}
-              >
-                {formType === "register" && <RegisterForm isVisible={true} />}
-                {formType === "login" && <LoginForm isVisible={true} />}
-              </MenuItem>
-            </Menu>
-          </>
-        ) : (
-          <LogoutButton />
-        )}
-        <FormControlLabel
-          control={
-            <Switch
-              checked={darkMode}
-              onChange={() => setDarkMode(!darkMode)}
-              sx={{
-                mx: 1, // Consistent spacing around switch
-                "& .MuiSwitch-switchBase": {
-                  // Base state (unchecked, light mode)
-                  "& .MuiSwitch-thumb": {
-                    bgcolor: "grey.500", // Neutral gray thumb in light mode
-                  },
-                  "& .MuiSwitch-track": {
-                    bgcolor: "grey.300", // Light gray track in light mode
-                  },
-                },
-                "& .MuiSwitch-switchBase.Mui-checked": {
-                  // Checked state (dark mode)
-                  "& .MuiSwitch-thumb": {
-                    bgcolor: "grey.800", // Dark gray thumb in dark mode
-                  },
-                  "& .MuiSwitch-track": {
-                    bgcolor: "grey.600", // Darker track in dark mode
-                  },
-                },
-              }}
-            />
-          }
-          label={
-            <Typography
-              variant="body2"
-              color="text.primary" // Adapts to theme (black in light, white in dark)
-              sx={{ ml: 0.5 }}
-            >
-              {darkMode ? "Dark" : "Light"}
+                {darkMode ? "Dark" : "Light"}
+              </Typography>
+            }
+            sx={{ m: 0 }} // No extra margin, rely on Toolbar spacing
+          />
+        </Box>
+        <Snackbar
+          open={showLoginError}
+          autoHideDuration={3000}
+          onClose={() => setShowLoginError(false)}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <Alert severity="error" onClose={() => setShowLoginError(false)}>
+            You must be logged in to create a new section.
+          </Alert>
+        </Snackbar>
+
+        <Dialog open={newSectionOpen} onClose={handleCloseNewSection} fullWidth>
+          <DialogTitle>Create New Section</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2">
+              Section creation coming soon. For now, you can post in the
+              community feed below.
             </Typography>
-          }
-          sx={{ m: 0 }} // No extra margin, rely on Toolbar spacing
-        />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseNewSection}>Close</Button>
+          </DialogActions>
+        </Dialog>
       </Toolbar>
     </AppBar>
   );

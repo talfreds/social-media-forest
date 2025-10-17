@@ -1,14 +1,13 @@
-version: "3.8" # Using a slightly newer version for better compatibility
 services:
   postgres:
     container_name: social-media-postgres
     image: postgres:latest
     env_file:
-      - .env # Load variables from .env
+      - .env
     environment:
-      POSTGRES_USER: ${DB_USERNAME} # Root user for the database
-      POSTGRES_PASSWORD: ${DB_PASSWORD} # Password for the root user
-      POSTGRES_DB: ${DB_NAME} # Name of the database to create
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432" # Expose PostgreSQL port
     volumes:
@@ -16,4 +15,4 @@ services:
     restart: unless-stopped # Restart unless explicitly stopped
 
 volumes:
-  postgres-data: # Named volume for persisting PostgreSQL data
+  postgres-data: # Named volume for persisting PostgreSQL data (so that we can swap between them)
