@@ -14,6 +14,17 @@ model User {
   name      String?
   posts     Post[]
   comments  Comment[]
+  forests   Forest[] @relation("ForestCreator")
+}
+
+model Forest {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  creatorId   Int
+  creator     User     @relation("ForestCreator", fields: [creatorId], references: [id])
+  posts       Post[]
+  createdAt   DateTime @default(now())
 }
 
 model Post {
@@ -21,6 +32,8 @@ model Post {
   content   String
   authorId  Int
   author    User      @relation(fields: [authorId], references: [id])
+  forestId  Int?
+  forest    Forest?   @relation(fields: [forestId], references: [id])
   comments  Comment[]
   createdAt DateTime  @default(now())
   location  Json?     // Stores { lat: number, lon: number }
@@ -28,11 +41,16 @@ model Post {
 
 
 model Comment {
-  id        Int      @id @default(autoincrement())
-  content   String
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-  postId    Int
-  post      Post     @relation(fields: [postId], references: [id])
-  createdAt DateTime @default(now())
+  id          Int       @id @default(autoincrement())
+  content     String
+  authorId    Int
+  author      User      @relation(fields: [authorId], references: [id])
+  postId      Int
+  post        Post      @relation(fields: [postId], references: [id])
+  createdAt   DateTime  @default(now())
+  
+  // Self-referential for nested comments
+  parentId    Int?
+  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies     Comment[] @relation("CommentReplies")
 }

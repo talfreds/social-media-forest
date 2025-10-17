@@ -16,8 +16,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
 } from "@mui/material";
-import { Brightness7, Brightness4 } from "@mui/icons-material";
+import { Brightness7, Brightness4, Forest } from "@mui/icons-material";
 import RegisterForm from "./RegisterForm";
 import LoginForm from "./LoginForm";
 import LogoutButton from "./LogoutButton";
@@ -40,6 +41,10 @@ export default function MenuBar({
   const [showLoginError, setShowLoginError] = useState(false);
   const [newSectionOpen, setNewSectionOpen] = useState(false);
   const [currentForest, setCurrentForest] = useState<ForestType>("deep-woods");
+  const [createForestMode, setCreateForestMode] = useState(false);
+  const [newForestName, setNewForestName] = useState("");
+  const [newForestDesc, setNewForestDesc] = useState("");
+  const [forestError, setForestError] = useState("");
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -62,7 +67,43 @@ export default function MenuBar({
     setNewSectionOpen(true);
   };
 
-  const handleCloseNewSection = () => setNewSectionOpen(false);
+  const handleCloseNewSection = () => {
+    setNewSectionOpen(false);
+    setCreateForestMode(false);
+    setNewForestName("");
+    setNewForestDesc("");
+    setForestError("");
+  };
+
+  const handleCreateForest = async () => {
+    if (!newForestName.trim()) {
+      setForestError("Forest name is required");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/forests/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newForestName.trim(),
+          description: newForestDesc.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        const forest = await res.json();
+        // Reload to show new forest
+        window.location.reload();
+      } else {
+        const error = await res.json();
+        setForestError(error.error || "Failed to create forest");
+      }
+    } catch (error) {
+      console.error("Error creating forest:", error);
+      setForestError("An error occurred while creating the forest");
+    }
+  };
 
   const getForestName = (type: ForestType): string => {
     const names = {
@@ -80,8 +121,21 @@ export default function MenuBar({
       <Toolbar
         sx={{ justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Image src="/monkey.svg" alt="Monkey" width={32} height={32} />
+          <Typography
+            variant="h6"
+            sx={{
+              color: "#E8F5E8",
+              fontWeight: 700,
+              display: { xs: "none", sm: "flex" },
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <Forest fontSize="small" />
+            {getForestName(currentForest)}
+          </Typography>
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -254,25 +308,103 @@ export default function MenuBar({
               />
             </Box>
 
-            <Box sx={{ mt: 4, textAlign: "center" }}>
-              <Typography variant="body2" sx={{ color: "#6B8B5A", mb: 2 }}>
-                Currently exploring:{" "}
-                <strong>{getForestName(currentForest)}</strong>
-              </Typography>
-              <Button
-                variant="contained"
-                onClick={handleCloseNewSection}
-                sx={{
-                  bgcolor: "#4A6741",
-                  "&:hover": { bgcolor: "#6B8B5A" },
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: "25px",
-                }}
-              >
-                Enter {getForestName(currentForest)}
-              </Button>
-            </Box>
+            {!createForestMode ? (
+              <Box sx={{ mt: 4, textAlign: "center" }}>
+                <Typography variant="body2" sx={{ color: "#6B8B5A", mb: 2 }}>
+                  Currently exploring:{" "}
+                  <strong>{getForestName(currentForest)}</strong>
+                </Typography>
+                <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setCreateForestMode(true)}
+                    sx={{
+                      borderColor: "#4A6741",
+                      color: "#4A6741",
+                      "&:hover": {
+                        borderColor: "#6B8B5A",
+                        bgcolor: "rgba(74, 103, 65, 0.1)",
+                      },
+                      px: 3,
+                      py: 1.5,
+                      borderRadius: "25px",
+                    }}
+                  >
+                    🌱 Create New Forest
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={handleCloseNewSection}
+                    sx={{
+                      bgcolor: "#4A6741",
+                      "&:hover": { bgcolor: "#6B8B5A" },
+                      px: 4,
+                      py: 1.5,
+                      borderRadius: "25px",
+                    }}
+                  >
+                    Enter {getForestName(currentForest)}
+                  </Button>
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ mt: 4 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ color: "#4A6741", mb: 2, fontWeight: 600 }}
+                >
+                  Plant a New Forest
+                </Typography>
+                <TextField
+                  label="Forest Name"
+                  value={newForestName}
+                  onChange={(e) => setNewForestName(e.target.value)}
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  error={!!forestError}
+                />
+                <TextField
+                  label="Description (optional)"
+                  value={newForestDesc}
+                  onChange={(e) => setNewForestDesc(e.target.value)}
+                  fullWidth
+                  multiline
+                  rows={3}
+                  sx={{ mb: 2 }}
+                />
+                {forestError && (
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "error.main", mb: 2 }}
+                  >
+                    {forestError}
+                  </Typography>
+                )}
+                <Box
+                  sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
+                >
+                  <Button
+                    onClick={() => {
+                      setCreateForestMode(false);
+                      setForestError("");
+                    }}
+                    sx={{ color: "#6B8B5A" }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={handleCreateForest}
+                    sx={{
+                      bgcolor: "#4A6741",
+                      "&:hover": { bgcolor: "#6B8B5A" },
+                    }}
+                  >
+                    Create Forest
+                  </Button>
+                </Box>
+              </Box>
+            )}
           </DialogContent>
         </Dialog>
       </Toolbar>

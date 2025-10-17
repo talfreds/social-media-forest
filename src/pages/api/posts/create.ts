@@ -14,13 +14,14 @@ export default async function handler(
   console.log(`🚀🤗 ~ user:`, user);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  const { content, location } = req.body;
+  const { content, location, forestId } = req.body;
   try {
     const post = await prisma.post.create({
       data: {
         content,
         location, // { lat, lon }
         authorId: user.userId,
+        forestId: forestId ? Number(forestId) : null,
       },
     });
     res.status(201).json(post);

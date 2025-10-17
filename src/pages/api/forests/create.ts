@@ -22,21 +22,28 @@ export default async function handler(
       return res.status(401).json({ error: "Invalid token" });
     }
 
-    const userId = decoded.userId;
+    const { name, description } = req.body;
 
-    const { content, postId, parentId } = req.body;
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ error: "Forest name is required" });
+    }
 
-    const comment = await prisma.comment.create({
+    const forest = await prisma.forest.create({
       data: {
-        content,
-        authorId: userId,
-        postId: Number(postId),
-        parentId: parentId ? Number(parentId) : null,
+        name: name.trim(),
+        description: description?.trim() || null,
+        creatorId: decoded.userId,
       },
     });
-    res.status(201).json(comment);
-  } catch (error) {
-    console.error("Comment creation error:", error);
-    res.status(401).json({ error: "Invalid token or authentication error" });
+
+    res.status(201).json(forest);
+  } catch (error: any) {
+    console.error("Forest creation error:", error);
+    if (error.code === "P2002") {
+      return res
+        .status(400)
+        .json({ error: "A forest with this name already exists" });
+    }
+    res.status(500).json({ error: "Failed to create forest" });
   }
 }

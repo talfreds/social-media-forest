@@ -55,6 +55,7 @@ export default function Home({
 }: Props) {
   const [newPost, setNewPost] = useState("");
   const [userCity, setUserCity] = useState(initialCity);
+  const [currentForestId, setCurrentForestId] = useState<number | null>(null);
   // Location-specific posting is temporarily disabled; we'll re-introduce later
   const [replyInputs, setReplyInputs] = useState<Record<number, string>>({}); // Reply input per post
 
@@ -87,7 +88,11 @@ export default function Home({
       const res = await fetch("/api/posts/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newPost, location: null }),
+        body: JSON.stringify({
+          content: newPost,
+          location: null,
+          forestId: currentForestId,
+        }),
       });
       if (res.ok) {
         window.location.reload();
@@ -100,16 +105,18 @@ export default function Home({
     setNewPost("");
   };
 
-  const handleReplySubmit = async (postId: number, e: React.FormEvent) => {
-    e.preventDefault();
-    const replyContent = replyInputs[postId] || "";
-    if (!replyContent) return;
+  const handleReplySubmit = async (
+    postId: number,
+    parentId: number | null,
+    content: string
+  ) => {
+    if (!content.trim()) return;
 
     try {
       const res = await fetch("/api/comments/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, content: replyContent }),
+        body: JSON.stringify({ postId, content, parentId }),
       });
       if (res.ok) {
         window.location.reload();
@@ -119,7 +126,11 @@ export default function Home({
     } catch (error) {
       console.error("Error submitting comment:", error);
     }
-    setReplyInputs((prev) => ({ ...prev, [postId]: "" }));
+
+    // Clear the input if it's a top-level reply
+    if (!parentId) {
+      setReplyInputs((prev) => ({ ...prev, [postId]: "" }));
+    }
   };
 
   return (
@@ -167,44 +178,13 @@ export default function Home({
 
         <Container
           maxWidth="lg"
-          sx={{ py: 4, position: "relative", zIndex: 1 }}
+          sx={{
+            py: 4,
+            position: "relative",
+            zIndex: 1,
+            pl: { xs: 2, md: "20%", lg: "25%" }, // Push content towards middle-right
+          }}
         >
-          {/* Forest Header */}
-          <Box sx={{ textAlign: "center", mb: 6, mt: 2 }}>
-            <Typography
-              variant="h2"
-              sx={{
-                fontSize: { xs: "2rem", sm: "3rem" },
-                fontWeight: 700,
-                color: "#E8F5E8",
-                mb: 2,
-                textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 2,
-              }}
-            >
-              <Forest sx={{ fontSize: "inherit" }} />
-              Ancient Forest
-              <Forest sx={{ fontSize: "inherit" }} />
-            </Typography>
-            <Typography
-              variant="h5"
-              sx={{
-                color: "#B8D4B8",
-                fontSize: { xs: "1rem", sm: "1.25rem" },
-                fontWeight: 400,
-                maxWidth: "600px",
-                mx: "auto",
-                textShadow: "1px 1px 2px rgba(0, 0, 0, 0.5)",
-              }}
-            >
-              Where thoughts grow like mighty trees and conversations branch
-              outward
-            </Typography>
-          </Box>
-
           {/* Tree Grove (Posts) */}
           <Box
             sx={{
@@ -416,6 +396,33 @@ export default function Home({
             </Box>
           )}
         </Container>
+
+        {/* Tagline - Bottom Right */}
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            zIndex: 100,
+            maxWidth: "300px",
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{
+              color: "#B8D4B8",
+              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+              fontWeight: 400,
+              fontStyle: "italic",
+              textAlign: "right",
+              textShadow: "1px 1px 3px rgba(0, 0, 0, 0.8)",
+              opacity: 0.8,
+            }}
+          >
+            Where thoughts grow like mighty trees and conversations branch
+            outward
+          </Typography>
+        </Box>
       </Box>
     </>
   );
@@ -479,13 +486,35 @@ export const getServerSideProps: GetServerSideProps<
   `;
   console.log(`🚀🤗 ~ >= ~ nearbyPosts:`, nearbyPosts);
 
-  const allPosts = await prisma.post.findMany({
+  // Recursive function to build nested comments
+  const buildCommentTree = (
+    comments: any[],
+    parentId: number | null = null
+  ): any[] => {
+    return comments
+      .filter((comment) => comment.parentId === parentId)
+      .map((comment) => ({
+        ...comment,
+        replies: buildCommentTree(comments, comment.id),
+      }));
+  };
+
+  const postsWithComments = await prisma.post.findMany({
     include: {
-      author: { select: { name: true } },
-      comments: { include: { author: { select: { name: true } } } },
+      author: { select: { id: true, name: true } },
+      comments: {
+        include: { author: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "asc" },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
+
+  // Build nested comment structure for each post
+  const allPosts = postsWithComments.map((post) => ({
+    ...post,
+    comments: buildCommentTree(post.comments),
+  }));
 
   return {
     props: {

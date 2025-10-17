@@ -8,29 +8,32 @@ import {
   IconButton,
   TextField,
   Button,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
   Divider,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { AccountCircle, Send, Forest, Nature } from "@mui/icons-material";
+import { Send, Forest, Nature, Spa } from "@mui/icons-material";
+import NestedComment from "./NestedComment";
+import Link from "next/link";
 
 interface Comment {
   id: number;
   content: string;
-  author: { name: string | null };
+  author: { id: number; name: string | null };
+  replies?: Comment[];
 }
 
 interface TreePostProps {
   id: number;
   content: string;
-  author: { name: string | null };
+  author: { id: number; name: string | null };
   comments: Comment[];
   isLoggedIn: boolean;
-  onReply: (postId: number, e: React.FormEvent) => Promise<void>;
+  onReply: (
+    postId: number,
+    parentId: number | null,
+    content: string
+  ) => Promise<void>;
   replyInputs: Record<number, string>;
   setReplyInputs: (inputs: Record<number, string>) => void;
 }
@@ -52,8 +55,16 @@ const TreePost: React.FC<TreePostProps> = ({
     e.preventDefault();
     const replyContent = replyInputs[id] || "";
     if (replyContent.trim()) {
-      onReply(id, e);
+      onReply(id, null, replyContent);
     }
+  };
+
+  const handleNestedReply = (
+    postId: number,
+    parentId: number,
+    content: string
+  ) => {
+    onReply(postId, parentId, content);
   };
 
   // Generate a tree type based on post content length and author
@@ -94,100 +105,14 @@ const TreePost: React.FC<TreePostProps> = ({
       sx={{
         position: "relative",
         display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
+        flexDirection: isMobile ? "column" : "row",
+        alignItems: isMobile ? "center" : "flex-start",
         mb: 6,
         mx: isMobile ? 1 : 2,
+        gap: 3,
       }}
     >
-      {/* Tree Visualization */}
-      <Box
-        sx={{
-          position: "relative",
-          display: "flex",
-          justifyContent: "center",
-          mb: 2,
-        }}
-      >
-        {/* Tree Crown (Leaves) */}
-        <Box
-          className="tree-crown"
-          sx={{
-            position: "absolute",
-            top: -style.crownSize,
-            width: style.crownSize,
-            height: style.crownSize,
-            borderRadius: "50%",
-            background: `radial-gradient(circle at 30% 30%, ${style.leafColor}, ${style.leafColor}AA)`,
-            boxShadow: `0 0 20px ${style.leafColor}44`,
-            zIndex: 1,
-          }}
-        />
-
-        {/* Tree Trunk */}
-        <Box
-          sx={{
-            width: style.trunkWidth,
-            height: style.trunkHeight,
-            background: "linear-gradient(135deg, #8B6914, #A68B5B)",
-            borderRadius: `${style.trunkWidth / 2}px`,
-            position: "relative",
-            boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3)",
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              top: "20%",
-              left: "10%",
-              right: "10%",
-              height: "60%",
-              background: "linear-gradient(135deg, #6B4F11, #8B6914)",
-              borderRadius: "2px",
-            },
-          }}
-        />
-
-        {/* Tree Branches (Comments) */}
-        {comments.length > 0 && (
-          <Box
-            sx={{
-              position: "absolute",
-              top: style.trunkHeight * 0.3,
-              left: -40,
-              right: -40,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            {comments.slice(0, 2).map((comment, index) => (
-              <Box
-                key={comment.id}
-                sx={{
-                  position: "relative",
-                  width: 60,
-                  height: 3,
-                  background: "linear-gradient(90deg, #8B6914, #A68B5B)",
-                  borderRadius: "2px",
-                  transform: `rotate(${index === 0 ? "-15deg" : "15deg"})`,
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    right: -8,
-                    top: -6,
-                    width: 12,
-                    height: 12,
-                    background: style.leafColor,
-                    borderRadius: "50%",
-                    boxShadow: `0 0 8px ${style.leafColor}66`,
-                  },
-                }}
-              />
-            ))}
-          </Box>
-        )}
-      </Box>
-
-      {/* Post Content Card */}
+      {/* Post Content Card - Left Side */}
       <Card
         sx={{
           minWidth: isMobile ? "280px" : "400px",
@@ -199,6 +124,8 @@ const TreePost: React.FC<TreePostProps> = ({
           border: `2px solid ${theme.palette.primary.main}`,
           borderRadius: "16px",
           boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3), 0 0 16px ${theme.palette.primary.main}33`,
+          order: isMobile ? 2 : 1,
+          flex: 1,
         }}
       >
         <CardContent sx={{ p: 3 }}>
@@ -215,16 +142,25 @@ const TreePost: React.FC<TreePostProps> = ({
               <Forest fontSize="small" />
             </Avatar>
             <Box>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 600,
-                  color: theme.palette.text.primary,
-                  fontSize: "1.1rem",
-                }}
+              <Link
+                href={`/user/${author.id}`}
+                style={{ textDecoration: "none" }}
               >
-                {author.name || "Anonymous Forester"}
-              </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 600,
+                    color: theme.palette.info.main,
+                    fontSize: "1.1rem",
+                    cursor: "pointer",
+                    "&:hover": {
+                      textDecoration: "underline",
+                    },
+                  }}
+                >
+                  {author.name || "Anonymous Forester"}
+                </Typography>
+              </Link>
               <Typography
                 variant="caption"
                 sx={{
@@ -273,59 +209,19 @@ const TreePost: React.FC<TreePostProps> = ({
                 Branches ({comments.length})
               </Typography>
 
-              <List sx={{ p: 0 }}>
-                {comments.map((comment, index) => (
-                  <ListItem
+              <Box sx={{ p: 0 }}>
+                {comments.map((comment) => (
+                  <NestedComment
                     key={comment.id}
-                    sx={{
-                      px: 0,
-                      py: 1,
-                      alignItems: "flex-start",
-                      borderBottom:
-                        index < comments.length - 1
-                          ? `1px solid ${theme.palette.divider}`
-                          : "none",
-                    }}
-                  >
-                    <ListItemAvatar sx={{ minWidth: 36, mr: 1.5 }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: theme.palette.secondary.main,
-                          width: 28,
-                          height: 28,
-                        }}
-                      >
-                        <AccountCircle fontSize="small" />
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: theme.palette.text.primary,
-                            lineHeight: 1.4,
-                            mb: 0.5,
-                          }}
-                        >
-                          {comment.content}
-                        </Typography>
-                      }
-                      secondary={
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: theme.palette.text.secondary,
-                            fontSize: "0.75rem",
-                          }}
-                        >
-                          — {comment.author.name || "Anonymous"}
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
+                    comment={comment}
+                    postId={id}
+                    isLoggedIn={isLoggedIn}
+                    level={0}
+                    onReply={handleNestedReply}
+                    theme={theme}
+                  />
                 ))}
-              </List>
+              </Box>
             </>
           )}
 
@@ -374,23 +270,125 @@ const TreePost: React.FC<TreePostProps> = ({
                 <IconButton
                   type="submit"
                   sx={{
-                    bgcolor: theme.palette.primary.main,
+                    bgcolor: theme.palette.success.main,
                     color: theme.palette.primary.contrastText,
                     "&:hover": {
-                      bgcolor: theme.palette.primary.dark,
+                      bgcolor: theme.palette.success.dark,
+                      transform: "rotate(20deg)",
                     },
+                    transition: "all 0.3s ease",
                     borderRadius: "50%",
                     width: 36,
                     height: 36,
                   }}
                 >
-                  <Send fontSize="small" />
+                  <Spa fontSize="small" sx={{ transform: "rotate(-45deg)" }} />
                 </IconButton>
               </Box>
             </>
           )}
         </CardContent>
       </Card>
+
+      {/* Tree Visualization - Right Side */}
+      <Box
+        sx={{
+          position: "relative",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minWidth: isMobile ? "auto" : "150px",
+          order: isMobile ? 1 : 2,
+        }}
+      >
+        <Box
+          sx={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          {/* Tree Crown (Leaves) */}
+          <Box
+            className="tree-crown"
+            sx={{
+              width: style.crownSize,
+              height: style.crownSize,
+              borderRadius: "50%",
+              background: `radial-gradient(circle at 30% 30%, ${style.leafColor}, ${style.leafColor}AA)`,
+              boxShadow: `0 0 20px ${style.leafColor}44`,
+              zIndex: 1,
+              mb: -2,
+            }}
+          />
+
+          {/* Tree Trunk */}
+          <Box
+            sx={{
+              width: style.trunkWidth,
+              height: style.trunkHeight,
+              background: "linear-gradient(135deg, #8B6914, #A68B5B)",
+              borderRadius: `${style.trunkWidth / 2}px`,
+              position: "relative",
+              boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3)",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: "20%",
+                left: "10%",
+                right: "10%",
+                height: "60%",
+                background: "linear-gradient(135deg, #6B4F11, #8B6914)",
+                borderRadius: "2px",
+              },
+            }}
+          />
+
+          {/* Tree Branches (Comments) - Extend from trunk */}
+          {comments.length > 0 && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: style.trunkHeight * 0.4,
+                left: -40,
+                right: -40,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                pointerEvents: "none",
+              }}
+            >
+              {comments.slice(0, 3).map((comment, index) => (
+                <Box
+                  key={comment.id}
+                  sx={{
+                    position: "relative",
+                    width: 50,
+                    height: 3,
+                    background: "linear-gradient(90deg, #8B6914, #A68B5B)",
+                    borderRadius: "2px",
+                    transform: `rotate(${
+                      index === 0 ? "-25deg" : index === 1 ? "0deg" : "25deg"
+                    })`,
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      right: -8,
+                      top: -6,
+                      width: 10,
+                      height: 10,
+                      background: style.leafColor,
+                      borderRadius: "50%",
+                      boxShadow: `0 0 8px ${style.leafColor}66`,
+                    },
+                  }}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 };
