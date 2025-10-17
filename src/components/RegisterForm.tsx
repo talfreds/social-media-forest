@@ -146,9 +146,9 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
             }}
           />
 
-          {/* Name Field */}
+          {/* Display Name Field */}
           <TextField
-            label="Name"
+            label="Display Name"
             type="text"
             value={data.name}
             onChange={(e) => setData({ ...data, name: e.target.value })}
@@ -156,6 +156,7 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
             variant="outlined"
             size="medium"
             error={!!errorMessage}
+            placeholder="How you'll appear to others"
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 1,

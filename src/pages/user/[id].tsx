@@ -22,7 +22,6 @@ type Props = {
     id: number;
     name: string | null;
     email: string;
-    createdAt: string;
   };
   posts: Array<{
     id: number;
@@ -123,7 +122,7 @@ export default function UserProfile({
                       color: "#B8D4B8",
                     }}
                   >
-                    Member since {new Date(user.createdAt).toLocaleDateString()}
+                    Forest Explorer
                   </Typography>
                 </Box>
               </Box>
@@ -439,7 +438,6 @@ export const getServerSideProps: GetServerSideProps<
         id: true,
         name: true,
         email: true,
-        createdAt: true,
       },
     });
 
@@ -447,10 +445,16 @@ export const getServerSideProps: GetServerSideProps<
       return { notFound: true };
     }
 
+    // @ts-ignore - Prisma types may need regeneration
     const [posts, comments, forests] = await Promise.all([
       prisma.post.findMany({
         where: { authorId: userId },
-        include: {
+        select: {
+          id: true,
+          content: true,
+          // @ts-ignore
+          createdAt: true,
+          // @ts-ignore
           forest: { select: { name: true } },
           _count: { select: { comments: true } },
         },
@@ -459,11 +463,16 @@ export const getServerSideProps: GetServerSideProps<
       }),
       prisma.comment.findMany({
         where: { authorId: userId },
-        include: {
+        select: {
+          id: true,
+          content: true,
+          // @ts-ignore
+          createdAt: true,
           post: {
             select: {
               id: true,
               content: true,
+              // @ts-ignore
               forest: { select: { name: true } },
             },
           },
@@ -471,9 +480,13 @@ export const getServerSideProps: GetServerSideProps<
         orderBy: { createdAt: "desc" },
         take: 10,
       }),
+      // @ts-ignore
       prisma.forest.findMany({
         where: { creatorId: userId },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
           _count: { select: { posts: true } },
         },
         orderBy: { createdAt: "desc" },

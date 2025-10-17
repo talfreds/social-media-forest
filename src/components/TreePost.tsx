@@ -12,7 +12,13 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { Send, Forest, Nature, Spa } from "@mui/icons-material";
+import {
+  Send,
+  Forest,
+  Nature,
+  Spa,
+  Link as LinkIcon,
+} from "@mui/icons-material";
 import NestedComment from "./NestedComment";
 import Link from "next/link";
 
@@ -112,70 +118,105 @@ const TreePost: React.FC<TreePostProps> = ({
         gap: 3,
       }}
     >
-      {/* Post Content Card - Left Side */}
+      {/* Post Content Card - Right Side */}
       <Card
         sx={{
           minWidth: isMobile ? "280px" : "400px",
           maxWidth: "500px",
           position: "relative",
           zIndex: 2,
-          backgroundColor: "rgba(26, 45, 26, 0.95)",
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? "rgba(26, 45, 26, 0.95)"
+              : "rgba(255, 255, 255, 0.98)",
           backdropFilter: "blur(10px)",
           border: `2px solid ${theme.palette.primary.main}`,
           borderRadius: "16px",
-          boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3), 0 0 16px ${theme.palette.primary.main}33`,
-          order: isMobile ? 2 : 1,
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? `0 8px 32px rgba(0, 0, 0, 0.3), 0 0 16px ${theme.palette.primary.main}33`
+              : `0 4px 16px rgba(0, 0, 0, 0.1), 0 0 8px ${theme.palette.primary.main}22`,
+          order: isMobile ? 2 : 2,
           flex: 1,
         }}
       >
         <CardContent sx={{ p: 3 }}>
           {/* Author and Tree Icon */}
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <Avatar
-              sx={{
-                bgcolor: theme.palette.primary.main,
-                mr: 2,
-                width: 36,
-                height: 36,
-              }}
-            >
-              <Forest fontSize="small" />
-            </Avatar>
-            <Box>
-              <Link
-                href={`/user/${author.id}`}
-                style={{ textDecoration: "none" }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 600,
-                    color: theme.palette.info.main,
-                    fontSize: "1.1rem",
-                    cursor: "pointer",
-                    "&:hover": {
-                      textDecoration: "underline",
-                    },
-                  }}
-                >
-                  {author.name || "Anonymous Forester"}
-                </Typography>
-              </Link>
-              <Typography
-                variant="caption"
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Avatar
                 sx={{
-                  color: theme.palette.text.secondary,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
+                  bgcolor: theme.palette.primary.main,
+                  mr: 2,
+                  width: 36,
+                  height: 36,
                 }}
               >
-                <Nature fontSize="inherit" />
-                {treeType === "sapling" && "Young Sapling"}
-                {treeType === "young-tree" && "Growing Tree"}
-                {treeType === "mature-tree" && "Ancient Oak"}
-              </Typography>
+                <Forest fontSize="small" />
+              </Avatar>
+              <Box>
+                <Link
+                  href={`/user/${author.id}`}
+                  style={{ textDecoration: "none" }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      color: theme.palette.info.main,
+                      fontSize: "1.1rem",
+                      cursor: "pointer",
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    {author.name || "Anonymous Forester"}
+                  </Typography>
+                </Link>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <Nature fontSize="inherit" />
+                  {treeType === "sapling" && "Young Sapling"}
+                  {treeType === "young-tree" && "Growing Tree"}
+                  {treeType === "mature-tree" && "Ancient Oak"}
+                </Typography>
+              </Box>
             </Box>
+
+            {/* Share Tree Link */}
+            <Link href={`/post/${id}`} style={{ textDecoration: "none" }}>
+              <IconButton
+                size="small"
+                sx={{
+                  color: theme.palette.text.secondary,
+                  "&:hover": {
+                    color: theme.palette.info.main,
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(66, 165, 245, 0.1)"
+                        : "rgba(33, 150, 243, 0.08)",
+                  },
+                }}
+                title="Link to this tree"
+              >
+                <LinkIcon fontSize="small" />
+              </IconButton>
+            </Link>
           </Box>
 
           {/* Post Content */}
@@ -243,13 +284,16 @@ const TreePost: React.FC<TreePostProps> = ({
                   onChange={(e) =>
                     setReplyInputs({ ...replyInputs, [id]: e.target.value })
                   }
-                  placeholder="Add a branch..."
+                  placeholder="Add a branch to this tree..."
                   fullWidth
                   variant="outlined"
                   size="small"
                   sx={{
                     "& .MuiOutlinedInput-root": {
-                      backgroundColor: "rgba(15, 26, 15, 0.8)",
+                      backgroundColor:
+                        theme.palette.mode === "dark"
+                          ? "rgba(15, 26, 15, 0.8)"
+                          : "rgba(255, 255, 255, 0.9)",
                       "& fieldset": {
                         borderColor: theme.palette.divider,
                         borderRadius: "20px",
@@ -267,30 +311,42 @@ const TreePost: React.FC<TreePostProps> = ({
                     },
                   }}
                 />
-                <IconButton
+                <Button
                   type="submit"
+                  variant="contained"
+                  startIcon={
+                    <Spa
+                      sx={{ fontSize: "1rem", transform: "rotate(-45deg)" }}
+                    />
+                  }
                   sx={{
                     bgcolor: theme.palette.success.main,
-                    color: theme.palette.primary.contrastText,
+                    color: "#fff",
+                    borderRadius: "20px",
+                    px: 2,
+                    py: 0.75,
+                    minWidth: "auto",
+                    textTransform: "none",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    boxShadow: `0 2px 8px ${theme.palette.success.main}44`,
                     "&:hover": {
                       bgcolor: theme.palette.success.dark,
-                      transform: "rotate(20deg)",
+                      boxShadow: `0 4px 12px ${theme.palette.success.main}66`,
+                      transform: "translateY(-1px)",
                     },
-                    transition: "all 0.3s ease",
-                    borderRadius: "50%",
-                    width: 36,
-                    height: 36,
+                    transition: "all 0.2s ease",
                   }}
                 >
-                  <Spa fontSize="small" sx={{ transform: "rotate(-45deg)" }} />
-                </IconButton>
+                  Branch
+                </Button>
               </Box>
             </>
           )}
         </CardContent>
       </Card>
 
-      {/* Tree Visualization - Right Side */}
+      {/* Tree Visualization - Left Side */}
       <Box
         sx={{
           position: "relative",
@@ -298,7 +354,7 @@ const TreePost: React.FC<TreePostProps> = ({
           justifyContent: "center",
           alignItems: "center",
           minWidth: isMobile ? "auto" : "150px",
-          order: isMobile ? 1 : 2,
+          order: isMobile ? 1 : 1,
         }}
       >
         <Box
@@ -347,45 +403,68 @@ const TreePost: React.FC<TreePostProps> = ({
 
           {/* Tree Branches (Comments) - Extend from trunk */}
           {comments.length > 0 && (
-            <Box
-              sx={{
-                position: "absolute",
-                top: style.trunkHeight * 0.4,
-                left: -40,
-                right: -40,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                pointerEvents: "none",
-              }}
-            >
-              {comments.slice(0, 3).map((comment, index) => (
-                <Box
-                  key={comment.id}
-                  sx={{
-                    position: "relative",
-                    width: 50,
-                    height: 3,
-                    background: "linear-gradient(90deg, #8B6914, #A68B5B)",
-                    borderRadius: "2px",
-                    transform: `rotate(${
-                      index === 0 ? "-25deg" : index === 1 ? "0deg" : "25deg"
-                    })`,
-                    "&::after": {
-                      content: '""',
-                      position: "absolute",
-                      right: -8,
-                      top: -6,
-                      width: 10,
-                      height: 10,
-                      background: style.leafColor,
-                      borderRadius: "50%",
-                      boxShadow: `0 0 8px ${style.leafColor}66`,
-                    },
-                  }}
-                />
-              ))}
-            </Box>
+            <>
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: style.trunkHeight * 0.4,
+                  left: -40,
+                  right: -40,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  pointerEvents: "none",
+                }}
+              >
+                {comments.slice(0, 3).map((comment, index) => (
+                  <Box
+                    key={comment.id}
+                    sx={{
+                      position: "relative",
+                      width: 50,
+                      height: 3,
+                      background: "linear-gradient(90deg, #8B6914, #A68B5B)",
+                      borderRadius: "2px",
+                      transform: `rotate(${
+                        index === 0 ? "-25deg" : index === 1 ? "0deg" : "25deg"
+                      })`,
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        right: -8,
+                        top: -6,
+                        width: 10,
+                        height: 10,
+                        background: style.leafColor,
+                        borderRadius: "50%",
+                        boxShadow: `0 0 8px ${style.leafColor}66`,
+                      },
+                    }}
+                  />
+                ))}
+              </Box>
+
+              {/* Branch count badge on tree */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 10,
+                  right: -10,
+                  bgcolor: style.leafColor,
+                  color: "#fff",
+                  borderRadius: "12px",
+                  px: 1,
+                  py: 0.5,
+                  fontSize: "0.3rem",
+                  fontWeight: 600,
+                  boxShadow: `0 2px 8px ${style.leafColor}66`,
+                  zIndex: 2,
+                }}
+              >
+                {comments.length}{" "}
+                {comments.length === 1 ? "branch" : "branches"}
+              </Box>
+            </>
           )}
         </Box>
       </Box>

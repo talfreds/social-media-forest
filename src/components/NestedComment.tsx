@@ -8,7 +8,14 @@ import {
   Button,
   Collapse,
 } from "@mui/material";
-import { AccountCircle, Send, Reply, Spa, ExpandMore, ExpandLess } from "@mui/icons-material";
+import {
+  AccountCircle,
+  Send,
+  Reply,
+  Spa,
+  ExpandMore,
+  ExpandLess,
+} from "@mui/icons-material";
 import Link from "next/link";
 
 interface Author {
@@ -41,6 +48,7 @@ const NestedComment: React.FC<NestedCommentProps> = ({
 }) => {
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [isCollapsed, setIsCollapsed] = useState(level > 1); // Auto-collapse comments deeper than 1 level
 
   const handleReplySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +85,7 @@ const NestedComment: React.FC<NestedCommentProps> = ({
 
         <Box sx={{ flex: 1 }}>
           {/* Author Name */}
-          {comment.author.id ? (
+          {comment.author?.id ? (
             <Link
               href={`/user/${comment.author.id}`}
               style={{ textDecoration: "none" }}
@@ -94,7 +102,7 @@ const NestedComment: React.FC<NestedCommentProps> = ({
                   },
                 }}
               >
-                {comment.author.name || "Anonymous"}
+                {comment.author?.name || "Anonymous"}
               </Typography>
             </Link>
           ) : (
@@ -106,7 +114,7 @@ const NestedComment: React.FC<NestedCommentProps> = ({
                 fontSize: "0.875rem",
               }}
             >
-              {comment.author.name || "Anonymous"}
+              {comment.author?.name || "Anonymous"}
             </Typography>
           )}
 
@@ -123,27 +131,82 @@ const NestedComment: React.FC<NestedCommentProps> = ({
             {comment.content}
           </Typography>
 
-          {/* Reply Button */}
-          {isLoggedIn && (
-            <Button
-              size="small"
-              startIcon={<Reply fontSize="small" />}
-              onClick={() => setShowReplyBox(!showReplyBox)}
-              sx={{
-                color: theme.palette.text.secondary,
-                fontSize: "0.75rem",
-                textTransform: "none",
-                minWidth: "auto",
-                px: 1,
-                py: 0.5,
-                "&:hover": {
-                  color: theme.palette.primary.main,
-                },
-              }}
-            >
-              Reply
-            </Button>
-          )}
+          {/* Action Buttons */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            {/* Collapse/Expand Button */}
+            {comment.replies && comment.replies.length > 0 && (
+              <IconButton
+                size="small"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                sx={{
+                  color: theme.palette.text.secondary,
+                  padding: 0.25,
+                  width: 24,
+                  height: 24,
+                  "&:hover": {
+                    color: theme.palette.primary.main,
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(74, 103, 65, 0.15)"
+                        : "rgba(46, 125, 50, 0.08)",
+                  },
+                }}
+              >
+                {isCollapsed ? (
+                  <ExpandMore sx={{ fontSize: "1rem" }} />
+                ) : (
+                  <ExpandLess sx={{ fontSize: "1rem" }} />
+                )}
+              </IconButton>
+            )}
+
+            {/* Reply Button */}
+            {isLoggedIn && !isCollapsed && (
+              <Button
+                size="small"
+                startIcon={<Reply sx={{ fontSize: "0.875rem" }} />}
+                onClick={() => setShowReplyBox(!showReplyBox)}
+                sx={{
+                  color: theme.palette.text.secondary,
+                  fontSize: "0.7rem",
+                  textTransform: "none",
+                  minWidth: "auto",
+                  px: 0.75,
+                  py: 0.25,
+                  minHeight: "24px",
+                  "&:hover": {
+                    color: theme.palette.primary.main,
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(74, 103, 65, 0.15)"
+                        : "rgba(46, 125, 50, 0.08)",
+                  },
+                }}
+              >
+                Reply
+              </Button>
+            )}
+
+            {/* Show collapsed count */}
+            {isCollapsed && (
+              <Typography
+                variant="caption"
+                sx={{
+                  color: theme.palette.text.secondary,
+                  fontSize: "0.7rem",
+                  fontStyle: "italic",
+                  cursor: "pointer",
+                }}
+                onClick={() => setIsCollapsed(false)}
+              >
+                {comment.replies
+                  ? `${comment.replies.length} hidden ${
+                      comment.replies.length === 1 ? "reply" : "replies"
+                    }`
+                  : "Show thread"}
+              </Typography>
+            )}
+          </Box>
 
           {/* Reply Input Box */}
           <Collapse in={showReplyBox}>
@@ -168,8 +231,10 @@ const NestedComment: React.FC<NestedCommentProps> = ({
                 maxRows={3}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    backgroundColor: "rgba(15, 26, 15, 0.6)",
-                    fontSize: "0.875rem",
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(15, 26, 15, 0.6)"
+                        : "rgba(255, 255, 255, 0.9)",
                     "& fieldset": {
                       borderColor: theme.palette.divider,
                       borderRadius: "8px",
@@ -180,6 +245,10 @@ const NestedComment: React.FC<NestedCommentProps> = ({
                     "&.Mui-focused fieldset": {
                       borderColor: theme.palette.primary.main,
                     },
+                  },
+                  "& .MuiInputBase-input": {
+                    fontSize: "0.875rem",
+                    color: theme.palette.text.primary,
                   },
                 }}
               />
@@ -198,30 +267,35 @@ const NestedComment: React.FC<NestedCommentProps> = ({
                     bgcolor: theme.palette.action.disabledBackground,
                   },
                   transition: "all 0.3s ease",
-                  width: 32,
-                  height: 32,
+                  width: 28,
+                  height: 28,
+                  padding: 0.5,
                 }}
               >
-                <Spa fontSize="small" sx={{ transform: "rotate(-45deg)" }} />
+                <Spa
+                  sx={{ fontSize: "0.875rem", transform: "rotate(-45deg)" }}
+                />
               </IconButton>
             </Box>
           </Collapse>
 
           {/* Nested Replies */}
           {comment.replies && comment.replies.length > 0 && (
-            <Box sx={{ mt: 1 }}>
-              {comment.replies.map((reply) => (
-                <NestedComment
-                  key={reply.id}
-                  comment={reply}
-                  postId={postId}
-                  isLoggedIn={isLoggedIn}
-                  level={level + 1}
-                  onReply={onReply}
-                  theme={theme}
-                />
-              ))}
-            </Box>
+            <Collapse in={!isCollapsed}>
+              <Box sx={{ mt: 1 }}>
+                {comment.replies.map((reply) => (
+                  <NestedComment
+                    key={reply.id}
+                    comment={reply}
+                    postId={postId}
+                    isLoggedIn={isLoggedIn}
+                    level={level + 1}
+                    onReply={onReply}
+                    theme={theme}
+                  />
+                ))}
+              </Box>
+            </Collapse>
           )}
         </Box>
       </Box>

@@ -126,7 +126,7 @@ export default function MenuBar({
           <Typography
             variant="h6"
             sx={{
-              color: "#E8F5E8",
+              color: darkMode ? "#E8F5E8" : "#FFFFFF",
               fontWeight: 700,
               display: { xs: "none", sm: "flex" },
               alignItems: "center",
@@ -310,11 +310,32 @@ export default function MenuBar({
 
             {!createForestMode ? (
               <Box sx={{ mt: 4, textAlign: "center" }}>
-                <Typography variant="body2" sx={{ color: "#6B8B5A", mb: 2 }}>
+                <Typography variant="body2" sx={{ color: "#6B8B5A", mb: 3 }}>
                   Currently exploring:{" "}
                   <strong>{getForestName(currentForest)}</strong>
                 </Typography>
-                <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 2,
+                    justifyContent: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                    onClick={handleCloseNewSection}
+                    sx={{
+                      bgcolor: "#4A6741",
+                      "&:hover": { bgcolor: "#6B8B5A" },
+                      px: 4,
+                      py: 1.5,
+                      borderRadius: "25px",
+                      minWidth: "160px",
+                    }}
+                  >
+                    🌲 Enter {getForestName(currentForest)}
+                  </Button>
                   <Button
                     variant="outlined"
                     onClick={() => setCreateForestMode(true)}
@@ -328,24 +349,18 @@ export default function MenuBar({
                       px: 3,
                       py: 1.5,
                       borderRadius: "25px",
+                      minWidth: "160px",
                     }}
                   >
                     🌱 Create New Forest
                   </Button>
-                  <Button
-                    variant="contained"
-                    onClick={handleCloseNewSection}
-                    sx={{
-                      bgcolor: "#4A6741",
-                      "&:hover": { bgcolor: "#6B8B5A" },
-                      px: 4,
-                      py: 1.5,
-                      borderRadius: "25px",
-                    }}
-                  >
-                    Enter {getForestName(currentForest)}
-                  </Button>
                 </Box>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "#6B8B5A", mt: 2, display: "block" }}
+                >
+                  Click on any forest above to change your current location
+                </Typography>
               </Box>
             ) : (
               <Box sx={{ mt: 4 }}>

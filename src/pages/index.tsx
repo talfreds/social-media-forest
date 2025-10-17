@@ -24,16 +24,24 @@ import TreePost from "../components/TreePost";
 import { forestBackgrounds } from "../lib/theme";
 import prisma from "../lib/prisma";
 
+type Comment = {
+  id: number;
+  content: string;
+  author: { id: number; name: string | null };
+  replies?: Comment[];
+};
+
 type Post = {
   id: number;
   content: string;
-  author: { name: string | null };
-  comments: { id: number; content: string; author: { name: string | null } }[];
+  author: { id: number; name: string | null };
+  comments: Comment[];
   location?: { lat: number; lon: number };
 };
 
 type Props = {
   isLoggedIn: boolean;
+  currentUser: { id: number; name: string | null } | null;
   nearbyPosts: Post[];
   allPosts: Post[];
   darkMode: boolean;
@@ -45,6 +53,7 @@ type Props = {
 
 export default function Home({
   isLoggedIn,
+  currentUser,
   nearbyPosts,
   allPosts,
   darkMode,
@@ -56,6 +65,7 @@ export default function Home({
   const [newPost, setNewPost] = useState("");
   const [userCity, setUserCity] = useState(initialCity);
   const [currentForestId, setCurrentForestId] = useState<number | null>(null);
+  const [posts, setPosts] = useState<Post[]>(allPosts);
   // Location-specific posting is temporarily disabled; we'll re-introduce later
   const [replyInputs, setReplyInputs] = useState<Record<number, string>>({}); // Reply input per post
 
@@ -112,24 +122,108 @@ export default function Home({
   ) => {
     if (!content.trim()) return;
 
+    // Optimistic update - add comment immediately
+    const tempComment: Comment = {
+      id: Date.now(), // Temporary ID
+      content,
+      author: {
+        id: currentUser?.id || 0,
+        name: currentUser?.name || "You",
+      },
+      replies: [],
+    };
+
+    // Helper function to add comment to tree
+    const addCommentToTree = (
+      comments: Comment[],
+      parentId: number | null
+    ): Comment[] => {
+      if (parentId === null) {
+        // Top-level comment
+        return [...comments, tempComment];
+      }
+      // Find parent and add as reply
+      return comments.map((comment) => {
+        if (comment.id === parentId) {
+          return {
+            ...comment,
+            replies: [...(comment.replies || []), tempComment],
+          };
+        }
+        if (comment.replies && comment.replies.length > 0) {
+          return {
+            ...comment,
+            replies: addCommentToTree(comment.replies, parentId),
+          };
+        }
+        return comment;
+      });
+    };
+
+    // Update UI immediately
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? { ...post, comments: addCommentToTree(post.comments, parentId) }
+          : post
+      )
+    );
+
+    // Clear the input
+    if (!parentId) {
+      setReplyInputs((prev) => ({ ...prev, [postId]: "" }));
+    }
+
+    // Send to server
     try {
       const res = await fetch("/api/comments/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ postId, content, parentId }),
       });
+
       if (res.ok) {
-        window.location.reload();
+        const newComment = await res.json();
+
+        // Helper function to recursively replace temp comment with real one
+        const replaceComment = (comments: Comment[]): Comment[] => {
+          return comments.map((comment) => {
+            if (comment.id === tempComment.id) {
+              return {
+                ...newComment,
+                replies: comment.replies || [],
+              };
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return {
+                ...comment,
+                replies: replaceComment(comment.replies),
+              };
+            }
+            return comment;
+          });
+        };
+
+        // Update with real comment data
+        setPosts((prevPosts) =>
+          prevPosts.map((post) =>
+            post.id === postId
+              ? {
+                  ...post,
+                  comments: replaceComment(post.comments),
+                }
+              : post
+          )
+        );
       } else {
         console.error("Comment creation failed:", await res.json());
+        // Revert optimistic update
+        window.location.reload();
       }
     } catch (error) {
       console.error("Error submitting comment:", error);
-    }
-
-    // Clear the input if it's a top-level reply
-    if (!parentId) {
-      setReplyInputs((prev) => ({ ...prev, [postId]: "" }));
+      // Revert optimistic update
+      window.location.reload();
     }
   };
 
@@ -146,22 +240,26 @@ export default function Home({
         className="forest-background"
         sx={{
           minHeight: "100vh",
-          background: forestBackgrounds.deepWoods,
+          background: darkMode
+            ? forestBackgrounds.deepWoods
+            : forestBackgrounds.sunnyMeadow,
           backgroundAttachment: "fixed",
           position: "relative",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: `
+          "&::before": darkMode
+            ? {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: `
               radial-gradient(ellipse at 20% 80%, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
               radial-gradient(ellipse at 80% 20%, rgba(0, 0, 0, 0.3) 0%, transparent 50%)
             `,
-            pointerEvents: "none",
-          },
+                pointerEvents: "none",
+              }
+            : {},
         }}
       >
         {/* Floating Forest Particles */}
@@ -182,7 +280,8 @@ export default function Home({
             py: 4,
             position: "relative",
             zIndex: 1,
-            pl: { xs: 2, md: "20%", lg: "25%" }, // Push content towards middle-right
+            pl: { xs: 2, md: "8%", lg: "12%" }, // Position halfway between left and middle
+            pr: { xs: 2, md: 3 },
           }}
         >
           {/* Tree Grove (Posts) */}
@@ -196,8 +295,8 @@ export default function Home({
               maxWidth: "800px",
             }}
           >
-            {allPosts.length > 0 ? (
-              allPosts.map((post) => (
+            {posts.length > 0 ? (
+              posts.map((post) => (
                 <TreePost
                   key={post.id}
                   id={post.id}
@@ -410,12 +509,14 @@ export default function Home({
           <Typography
             variant="body2"
             sx={{
-              color: "#B8D4B8",
+              color: darkMode ? "#B8D4B8" : "#558B2F",
               fontSize: { xs: "0.75rem", sm: "0.875rem" },
               fontWeight: 400,
               fontStyle: "italic",
               textAlign: "right",
-              textShadow: "1px 1px 3px rgba(0, 0, 0, 0.8)",
+              textShadow: darkMode
+                ? "1px 1px 3px rgba(0, 0, 0, 0.8)"
+                : "1px 1px 2px rgba(255, 255, 255, 0.8)",
               opacity: 0.8,
             }}
           >
@@ -433,7 +534,17 @@ export const getServerSideProps: GetServerSideProps<
 > = async (context) => {
   const cookies = parse(context.req.headers.cookie || "");
   const token = cookies.authToken;
-  const user = token ? verifyToken(token) : null;
+  const decodedUser = token ? verifyToken(token) : null;
+
+  // Fetch current user details if logged in
+  let currentUser = null;
+  if (decodedUser) {
+    const userRecord = await prisma.user.findUnique({
+      where: { id: decodedUser.userId },
+      select: { id: true, name: true },
+    });
+    currentUser = userRecord;
+  }
 
   const ip =
     context.req.headers["x-forwarded-for"] ||
@@ -518,7 +629,8 @@ export const getServerSideProps: GetServerSideProps<
 
   return {
     props: {
-      isLoggedIn: !!user,
+      isLoggedIn: !!decodedUser,
+      currentUser: currentUser ? JSON.parse(JSON.stringify(currentUser)) : null,
       nearbyPosts: JSON.parse(JSON.stringify(nearbyPosts || [])),
       allPosts: JSON.parse(JSON.stringify(allPosts)),
       darkMode: false,
