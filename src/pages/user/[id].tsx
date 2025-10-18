@@ -10,6 +10,7 @@ import {
   Avatar,
   Divider,
   Chip,
+  Button,
 } from "@mui/material";
 import { Forest, Nature, Comment as CommentIcon } from "@mui/icons-material";
 import MenuBar from "../../components/MenuBar";
@@ -163,6 +164,165 @@ export default function UserProfile({
               </Box>
             </CardContent>
           </Card>
+
+          {/* Settings Section - Only show for own profile */}
+          {isLoggedIn && (
+            <Card
+              sx={{
+                mb: 4,
+                backgroundColor: "rgba(26, 45, 26, 0.95)",
+                backdropFilter: "blur(10px)",
+                border: "2px solid #4A6741",
+                borderRadius: "16px",
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    color: "#E8F5E8",
+                    fontWeight: 600,
+                    mb: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Forest />
+                  Settings
+                </Typography>
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {/* Theme Toggle */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      p: 2,
+                      backgroundColor: "rgba(74, 103, 65, 0.2)",
+                      borderRadius: "8px",
+                      border: "1px solid #4A6741",
+                    }}
+                  >
+                    <Box>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ color: "#E8F5E8", fontWeight: 500 }}
+                      >
+                        Theme
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "#B8D4B8" }}>
+                        Choose your preferred theme
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Button
+                        variant={!darkMode ? "contained" : "outlined"}
+                        size="small"
+                        onClick={() => setDarkMode(false)}
+                        sx={{
+                          minWidth: "60px",
+                          textTransform: "none",
+                          bgcolor: !darkMode ? "#4A6741" : "transparent",
+                          color: !darkMode ? "#E8F5E8" : "#B8D4B8",
+                          borderColor: "#4A6741",
+                          "&:hover": {
+                            bgcolor: !darkMode
+                              ? "#6B8B5A"
+                              : "rgba(74, 103, 65, 0.2)",
+                          },
+                        }}
+                      >
+                        Light
+                      </Button>
+                      <Button
+                        variant={darkMode ? "contained" : "outlined"}
+                        size="small"
+                        onClick={() => setDarkMode(true)}
+                        sx={{
+                          minWidth: "60px",
+                          textTransform: "none",
+                          bgcolor: darkMode ? "#4A6741" : "transparent",
+                          color: darkMode ? "#E8F5E8" : "#B8D4B8",
+                          borderColor: "#4A6741",
+                          "&:hover": {
+                            bgcolor: darkMode
+                              ? "#6B8B5A"
+                              : "rgba(74, 103, 65, 0.2)",
+                          },
+                        }}
+                      >
+                        Dark
+                      </Button>
+                    </Box>
+                  </Box>
+
+                  {/* TODO: Add default forest setting */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      p: 2,
+                      backgroundColor: "rgba(74, 103, 65, 0.2)",
+                      borderRadius: "8px",
+                      border: "1px solid #4A6741",
+                    }}
+                  >
+                    <Box>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ color: "#E8F5E8", fontWeight: 500 }}
+                      >
+                        Default Forest
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "#B8D4B8" }}>
+                        Choose your default forest view
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "#B8D4B8", fontStyle: "italic" }}
+                    >
+                      Coming soon
+                    </Typography>
+                  </Box>
+
+                  {/* TODO: Add menu bar forest selection */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      p: 2,
+                      backgroundColor: "rgba(74, 103, 65, 0.2)",
+                      borderRadius: "8px",
+                      border: "1px solid #4A6741",
+                    }}
+                  >
+                    <Box>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ color: "#E8F5E8", fontWeight: 500 }}
+                      >
+                        Menu Bar Forests
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "#B8D4B8" }}>
+                        Choose which forests appear in the menu bar
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "#B8D4B8", fontStyle: "italic" }}
+                    >
+                      Coming soon
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Forests Created */}
           {forests.length > 0 && (

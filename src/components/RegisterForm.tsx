@@ -9,11 +9,38 @@ import {
   Fade,
   InputAdornment,
   IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Avatar,
+  Grid,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import {
+  Visibility,
+  VisibilityOff,
+  Pets,
+  BugReport,
+  Forest,
+  AcUnit,
+  Water,
+} from "@mui/icons-material";
+
+const avatarOptions = [
+  { value: "cat", label: "Cat", icon: Pets },
+  { value: "dog", label: "Dog", icon: BugReport },
+  { value: "fish", label: "Fish", icon: Water },
+  { value: "lizard", label: "Lizard", icon: AcUnit },
+  { value: "monkey", label: "Monkey", icon: Forest },
+];
 
 export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
-  const [data, setData] = useState({ email: "", password: "", name: "" });
+  const [data, setData] = useState({
+    email: "",
+    password: "",
+    name: "",
+    avatar: "monkey",
+  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -166,6 +193,65 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
               },
             }}
           />
+
+          {/* Avatar Selection */}
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+              Choose Your Avatar
+            </Typography>
+            <Grid container spacing={1}>
+              {avatarOptions.map((option) => {
+                const IconComponent = option.icon;
+                return (
+                  <Grid item xs={2.4} key={option.value}>
+                    <Box
+                      onClick={() => setData({ ...data, avatar: option.value })}
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        p: 1,
+                        borderRadius: 1,
+                        cursor: "pointer",
+                        border:
+                          data.avatar === option.value
+                            ? "2px solid"
+                            : "2px solid transparent",
+                        borderColor:
+                          data.avatar === option.value
+                            ? "primary.main"
+                            : "transparent",
+                        backgroundColor:
+                          data.avatar === option.value
+                            ? "primary.light"
+                            : "transparent",
+                        "&:hover": {
+                          backgroundColor: "action.hover",
+                        },
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          bgcolor:
+                            data.avatar === option.value
+                              ? "primary.main"
+                              : "grey.400",
+                          width: 32,
+                          height: 32,
+                          mb: 0.5,
+                        }}
+                      >
+                        <IconComponent fontSize="small" />
+                      </Avatar>
+                      <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+                        {option.label}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Box>
 
           {/* Submit Button */}
           <Button

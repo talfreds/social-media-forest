@@ -83,9 +83,9 @@ A forest-themed social media platform where posts are trees, comments are branch
    ./scripts/deploy-oci.sh
    ```
 
-### GitHub Actions (Recommended)
+### GitHub Actions
 
-Add these secrets to your GitHub repo:
+# Secrets:
 
 - `OCI_HOST` - Your OCI instance IP
 - `OCI_USER` - Usually `ubuntu`
@@ -112,21 +112,3 @@ View database in browser:
 ```bash
 pnpx prisma studio
 ```
-
-## Project Structure
-
-```
-src/
-├── pages/          # Next.js pages & API routes
-├── components/     # React components
-└── lib/            # Utilities (auth, prisma, theme)
-prisma/
-└── schema.prisma   # Database schema
-scripts/
-├── setup-oci.sh    # OCI setup automation
-└── deploy-oci.sh   # Deployment automation
-```
-
-## License
-
-MIT

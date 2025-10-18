@@ -6,12 +6,17 @@
     "dev": "next dev --turbopack",
     "db:reset": "docker compose up -d && pnpx prisma db push --force-reset && pnpx prisma generate && pnpm dev",
     "db:push": "pnpx prisma db push && pnpx prisma generate",
+    "db:migrate": "npx prisma migrate deploy",
+    "db:generate": "npx prisma generate",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "type-check": "npx tsc --noEmit",
+    "pre-deploy": "npm run type-check && npm run lint && npm run test && npm run build"
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {

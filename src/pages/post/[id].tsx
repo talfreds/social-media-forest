@@ -17,25 +17,28 @@ import Link from "next/link";
 import { useState } from "react";
 
 type Comment = {
-  id: number;
+  id: string;
   content: string;
-  author: { id: number; name: string | null };
+  author: { id: string; name: string | null };
   replies: Comment[];
+  imageUrl?: string | null;
+  deletedAt?: string | null;
 };
 
 type Post = {
-  id: number;
+  id: string;
   content: string;
-  author: { id: number; name: string | null };
+  author: { id: string; name: string | null };
   comments: Comment[];
-  forest: { id: number; name: string } | null;
+  forest: { id: string; name: string } | null;
   createdAt: string;
+  imageUrl?: string | null;
 };
 
 type Props = {
   post: Post;
   isLoggedIn: boolean;
-  currentUser: { id: number; name: string | null } | null;
+  currentUser: { id: string; name: string | null; avatar?: string } | null;
   darkMode: boolean;
   setDarkMode: (value: boolean) => void;
 };
@@ -47,12 +50,14 @@ export default function PostPage({
   darkMode,
   setDarkMode,
 }: Props) {
-  const [replyInputs, setReplyInputs] = useState<{ [key: number]: string }>({});
+  const [replyInputs, setReplyInputs] = useState<{ [key: string]: string }>({});
+  const [currentPost, setCurrentPost] = useState<Post>(post);
 
   const handleReplySubmit = async (
-    postId: number,
-    parentId: number | null,
-    content: string
+    postId: string,
+    parentId: string | null,
+    content: string,
+    imageUrl?: string | null
   ) => {
     if (!content.trim()) return;
 
@@ -60,7 +65,7 @@ export default function PostPage({
       const res = await fetch("/api/comments/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, content, parentId }),
+        body: JSON.stringify({ postId, content, parentId, imageUrl }),
       });
 
       if (res.ok) {
@@ -76,12 +81,59 @@ export default function PostPage({
     }
   };
 
+  const handleEditComment = (commentId: string, newContent: string) => {
+    // TODO: Implement comment editing
+    console.log("Edit comment:", commentId, newContent);
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const response = await fetch(
+        `/api/comments/delete?commentId=${commentId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        // Remove the comment from the UI optimistically
+        setCurrentPost((prevPost) => ({
+          ...prevPost,
+          comments: removeCommentFromTree(prevPost.comments, commentId),
+        }));
+      } else {
+        const error = await response.json();
+        console.error("Delete comment error:", error);
+        // You could show a toast notification here
+      }
+    } catch (error) {
+      console.error("Delete comment error:", error);
+      // You could show a toast notification here
+    }
+  };
+
+  // Helper function to remove a comment from the comment tree
+  const removeCommentFromTree = (
+    comments: Comment[],
+    commentId: string
+  ): Comment[] => {
+    return comments
+      .filter((comment) => comment.id !== commentId)
+      .map((comment) => ({
+        ...comment,
+        replies: comment.replies
+          ? removeCommentFromTree(comment.replies, commentId)
+          : [],
+      }));
+  };
+
   return (
     <>
       <MenuBar
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
+        currentUser={currentUser}
         currentForestId={post.forest?.id || null}
         currentForestName={post.forest?.name || null}
       />
@@ -179,20 +231,25 @@ export default function PostPage({
                 fontWeight: 600,
               }}
             >
-              Tree #{post.id}
+              Tree
             </Typography>
           </Breadcrumbs>
 
           {/* Post */}
           <TreePost
-            id={post.id}
-            content={post.content}
-            author={post.author}
-            comments={post.comments}
+            id={currentPost.id}
+            content={currentPost.content}
+            author={currentPost.author}
+            comments={currentPost.comments}
             isLoggedIn={isLoggedIn}
+            currentUserId={currentUser?.id}
+            imageUrl={currentPost.imageUrl}
             onReply={handleReplySubmit}
+            onEditComment={handleEditComment}
+            onDeleteComment={handleDeleteComment}
             replyInputs={replyInputs}
             setReplyInputs={setReplyInputs}
+            initialCollapsed={false}
           />
         </Container>
 
@@ -232,9 +289,9 @@ export default function PostPage({
 export const getServerSideProps: GetServerSideProps<
   Omit<Props, "setDarkMode">
 > = async (context) => {
-  const postId = Number(context.params?.id);
+  const postId = context.params?.id as string;
 
-  if (!postId || isNaN(postId)) {
+  if (!postId || typeof postId !== "string" || postId.trim().length === 0) {
     return { notFound: true };
   }
 
@@ -247,7 +304,7 @@ export const getServerSideProps: GetServerSideProps<
   if (decodedUser) {
     const userRecord = await prisma.user.findUnique({
       where: { id: decodedUser.userId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, avatar: true },
     });
     currentUser = userRecord;
   }
@@ -260,6 +317,7 @@ export const getServerSideProps: GetServerSideProps<
         id: true,
         content: true,
         createdAt: true,
+        imageUrl: true,
         author: {
           select: { id: true, name: true },
         },
@@ -267,9 +325,11 @@ export const getServerSideProps: GetServerSideProps<
           select: { id: true, name: true },
         },
         comments: {
+          where: { deletedAt: null },
           select: {
             id: true,
             content: true,
+            imageUrl: true,
             // @ts-ignore
             parentId: true,
             createdAt: true,
@@ -288,7 +348,7 @@ export const getServerSideProps: GetServerSideProps<
 
     // Recursive function to build nested comment tree
     const buildCommentTree = (comments: any[]): Comment[] => {
-      const commentMap = new Map<number, Comment>();
+      const commentMap = new Map<string, Comment>();
       const rootComments: Comment[] = [];
 
       // First pass: create all comment objects
@@ -298,6 +358,7 @@ export const getServerSideProps: GetServerSideProps<
           content: comment.content,
           author: comment.author,
           replies: [],
+          imageUrl: comment.imageUrl || null,
         });
       });
 

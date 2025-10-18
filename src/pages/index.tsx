@@ -18,6 +18,9 @@ import {
   CardContent,
   IconButton,
 } from "@mui/material";
+import RegisterForm from "../components/RegisterForm";
+import LoginForm from "../components/LoginForm";
+import ImageUpload from "../components/ImageUpload";
 import { Send, Forest, Nature } from "@mui/icons-material";
 import MenuBar from "../components/MenuBar";
 import TreePost from "../components/TreePost";
@@ -29,6 +32,8 @@ type Comment = {
   content: string;
   author: { id: string; name: string | null };
   replies?: Comment[];
+  imageUrl?: string | null;
+  deletedAt?: string | null;
 };
 
 type Post = {
@@ -38,18 +43,19 @@ type Post = {
   comments: Comment[];
   location?: { lat: number; lon: number };
   forestId: string | null;
+  imageUrl?: string | null;
 };
 
 type Props = {
   isLoggedIn: boolean;
-  currentUser: { id: string; name: string | null } | null;
-  nearbyPosts: Post[];
+  currentUser: { id: string; name: string | null; avatar?: string } | null;
+  // nearbyPosts: Post[];
   allPosts: Post[];
   darkMode: boolean;
   setDarkMode: (value: boolean) => void;
-  initialCity: string;
-  initialLat: number;
-  initialLon: number;
+  // initialCity: string;
+  // initialLat: number;
+  // initialLon: number;
   currentForestId: string | null;
   currentForestName: string | null;
 };
@@ -57,25 +63,71 @@ type Props = {
 export default function Home({
   isLoggedIn,
   currentUser,
-  nearbyPosts,
   allPosts,
   darkMode,
   setDarkMode,
-  initialCity,
-  initialLat,
-  initialLon,
   currentForestId,
   currentForestName,
 }: Props) {
   const [newPost, setNewPost] = useState("");
-  const [userCity, setUserCity] = useState(initialCity);
+  const [newPostImage, setNewPostImage] = useState<string | null>(null);
+  const [userCity, setUserCity] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>(allPosts);
   // Location-specific posting is temporarily disabled; we'll re-introduce later
   const [replyInputs, setReplyInputs] = useState<Record<string, string>>({}); // Reply input per post
+  const [formType, setFormType] = useState<"register" | "login" | null>(null);
 
   // Removed automatic geolocation request - it was causing browser security violations
   // Geolocation should only be requested in response to explicit user action
   // The initialCity from server-side IP geolocation is sufficient for now
+
+  const handleEditComment = (commentId: string, newContent: string) => {
+    // TODO: Implement comment editing
+    console.log("Edit comment:", commentId, newContent);
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const response = await fetch(
+        `/api/comments/delete?commentId=${commentId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        // Remove the comment from the UI optimistically
+        setPosts((prevPosts) =>
+          prevPosts.map((post) => ({
+            ...post,
+            comments: removeCommentFromTree(post.comments, commentId),
+          }))
+        );
+      } else {
+        const error = await response.json();
+        console.error("Delete comment error:", error);
+        // You could show a toast notification here
+      }
+    } catch (error) {
+      console.error("Delete comment error:", error);
+      // You could show a toast notification here
+    }
+  };
+
+  // Helper function to remove a comment from the comment tree
+  const removeCommentFromTree = (
+    comments: Comment[],
+    commentId: string
+  ): Comment[] => {
+    return comments
+      .filter((comment) => comment.id !== commentId)
+      .map((comment) => ({
+        ...comment,
+        replies: comment.replies
+          ? removeCommentFromTree(comment.replies, commentId)
+          : [],
+      }));
+  };
 
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,11 +143,13 @@ export default function Home({
       },
       comments: [],
       forestId: currentForestId,
+      imageUrl: newPostImage,
     };
 
     // Update UI immediately
     setPosts((prevPosts) => [tempPost, ...prevPosts]);
     setNewPost("");
+    setNewPostImage(null);
 
     try {
       const res = await fetch("/api/posts/create", {
@@ -105,6 +159,7 @@ export default function Home({
           content: tempPost.content,
           location: null,
           forestId: currentForestId,
+          imageUrl: newPostImage,
         }),
       });
 
@@ -141,7 +196,8 @@ export default function Home({
   const handleReplySubmit = async (
     postId: string,
     parentId: string | null,
-    content: string
+    content: string,
+    imageUrl?: string | null
   ) => {
     if (!content.trim()) return;
 
@@ -160,6 +216,7 @@ export default function Home({
         name: currentUser?.name || "You",
       },
       replies: [],
+      imageUrl: imageUrl || null,
     };
 
     // Helper function to add comment to tree
@@ -208,7 +265,7 @@ export default function Home({
       const res = await fetch("/api/comments/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, content, parentId }),
+        body: JSON.stringify({ postId, content, parentId, imageUrl }),
       });
 
       if (res.ok) {
@@ -262,8 +319,10 @@ export default function Home({
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
+        currentUser={currentUser}
         currentForestId={currentForestId}
         currentForestName={currentForestName}
+        onOpenRegister={() => setFormType("register")}
       />
 
       {/* Forest Background */}
@@ -313,7 +372,7 @@ export default function Home({
             zIndex: 1,
             pl: { xs: 2, md: 4, lg: 6 },
             pr: { xs: 2, md: 4 },
-            maxWidth: "1400px",
+            maxWidth: "100%",
           }}
         >
           {/* Tree Grove (Posts) */}
@@ -324,13 +383,16 @@ export default function Home({
               alignItems: "center",
               gap: 2,
               mx: "auto",
-              maxWidth: "800px",
+              maxWidth: "95%",
             }}
           >
-            {posts.filter((post) => post.forestId === currentForestId).length >
-            0 ? (
+            {posts.filter((post) =>
+              currentForestId ? post.forestId === currentForestId : true
+            ).length > 0 ? (
               posts
-                .filter((post) => post.forestId === currentForestId)
+                .filter((post) =>
+                  currentForestId ? post.forestId === currentForestId : true
+                )
                 .map((post) => (
                   <TreePost
                     key={post.id}
@@ -339,9 +401,15 @@ export default function Home({
                     author={post.author}
                     comments={post.comments}
                     isLoggedIn={isLoggedIn}
+                    currentUserId={currentUser?.id}
+                    imageUrl={post.imageUrl}
                     onReply={handleReplySubmit}
+                    onEditComment={handleEditComment}
+                    onDeleteComment={handleDeleteComment}
                     replyInputs={replyInputs}
                     setReplyInputs={setReplyInputs}
+                    initialCollapsed={true}
+                    onOpenRegister={() => setFormType("register")}
                   />
                 ))
             ) : (
@@ -460,6 +528,13 @@ export default function Home({
                       }}
                     />
 
+                    <ImageUpload
+                      onImageUpload={(url) => setNewPostImage(url)}
+                      onImageRemove={() => setNewPostImage(null)}
+                      currentImage={newPostImage}
+                      darkMode={darkMode}
+                    />
+
                     <Box sx={{ display: "flex", justifyContent: "center" }}>
                       <Button
                         type="submit"
@@ -523,11 +598,25 @@ export default function Home({
                     sx={{
                       color: "#B8D4B8",
                       lineHeight: 1.6,
+                      mb: 2,
                     }}
                   >
                     Log in to plant your first tree and watch your thoughts grow
                     into conversations.
                   </Typography>
+                  <Button
+                    variant="contained"
+                    onClick={() => setFormType("register")}
+                    sx={{
+                      bgcolor: "#4A6741",
+                      color: "#E8F5E8",
+                      "&:hover": {
+                        bgcolor: "#6B8B5A",
+                      },
+                    }}
+                  >
+                    Join Now
+                  </Button>
                 </CardContent>
               </Card>
             </Box>
@@ -563,6 +652,29 @@ export default function Home({
           </Typography>
         </Box>
       </Box>
+
+      {/* Register/Login Forms */}
+      <Dialog
+        open={formType === "register"}
+        onClose={() => setFormType(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogContent sx={{ p: 0 }}>
+          <RegisterForm isVisible={formType === "register"} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={formType === "login"}
+        onClose={() => setFormType(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogContent sx={{ p: 0 }}>
+          <LoginForm isVisible={formType === "login"} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -583,7 +695,7 @@ export const getServerSideProps: GetServerSideProps<
   if (decodedUser) {
     const userRecord = await prisma.user.findUnique({
       where: { id: decodedUser.userId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, avatar: true },
     });
     currentUser = userRecord;
   }
@@ -598,56 +710,56 @@ export const getServerSideProps: GetServerSideProps<
     currentForestName = forest?.name || null;
   }
 
-  const ip =
-    context.req.headers["x-forwarded-for"] ||
-    context.req.socket.remoteAddress ||
-    "unknown";
-  let initialCity = "Unknown";
-  let initialLat = 0;
-  let initialLon = 0;
-  try {
-    const res = await fetch(`http://ip-api.com/json/${ip}`);
-    const data = await res.json();
-    if (data.status === "success") {
-      initialCity = data.city || "Unknown";
-      initialLat = data.lat || 0;
-      initialLon = data.lon || 0;
-    }
-  } catch (error) {
-    console.error("IP geolocation error:", error);
-  }
+  // const ip =
+  //   context.req.headers["x-forwarded-for"] ||
+  //   context.req.socket.remoteAddress ||
+  //   "unknown";
+  // let initialCity = "Unknown";
+  // let initialLat = 0;
+  // let initialLon = 0;
+  // try {
+  //   const res = await fetch(`http://ip-api.com/json/${ip}`);
+  //   const data = await res.json();
+  //   if (data.status === "success") {
+  //     initialCity = data.city || "Unknown";
+  //     initialLat = data.lat || 0;
+  //     initialLon = data.lon || 0;
+  //   }
+  // } catch (error) {
+  //   console.error("IP geolocation error:", error);
+  // }
 
-  const nearbyPosts = await prisma.$queryRaw`
-    SELECT p.*, 
-      json_build_object('name', a.name) as author,
-      COALESCE(
-        (
-          SELECT json_agg(
-            json_build_object(
-              'id', c.id,
-              'content', c.content,
-              'author', json_build_object('name', ca.name)
-            )
-            ORDER BY c."createdAt" ASC
-          )
-          FROM "Comment" c
-          LEFT JOIN "User" ca ON c."authorId" = ca.id
-          WHERE c."postId" = p.id
-        ),
-        '[]'::json
-      ) as comments
-    FROM "Post" p
-    LEFT JOIN "User" a ON p."authorId" = a.id
-    WHERE (
-      6371 * acos(
-        cos(radians(${initialLat})) * cos(radians((location->>'lat')::float)) *
-        cos(radians((location->>'lon')::float) - radians(${initialLon})) +
-        sin(radians(${initialLat})) * sin(radians((location->>'lat')::float))
-      )
-    ) <= 50
-    ORDER BY p."createdAt" DESC
-  `;
-  console.log(`🚀🤗 ~ >= ~ nearbyPosts:`, nearbyPosts);
+  // const nearbyPosts = await prisma.$queryRaw`
+  //   SELECT p.*,
+  //     json_build_object('name', a.name) as author,
+  //     COALESCE(
+  //       (
+  //         SELECT json_agg(
+  //           json_build_object(
+  //             'id', c.id,
+  //             'content', c.content,
+  //             'author', json_build_object('name', ca.name)
+  //           )
+  //           ORDER BY c."createdAt" ASC
+  //         )
+  //         FROM "Comment" c
+  //         LEFT JOIN "User" ca ON c."authorId" = ca.id
+  //         WHERE c."postId" = p.id
+  //       ),
+  //       '[]'::json
+  //     ) as comments
+  //   FROM "Post" p
+  //   LEFT JOIN "User" a ON p."authorId" = a.id
+  //   WHERE (
+  //     6371 * acos(
+  //       cos(radians(${initialLat})) * cos(radians((location->>'lat')::float)) *
+  //       cos(radians((location->>'lon')::float) - radians(${initialLon})) +
+  //       sin(radians(${initialLat})) * sin(radians((location->>'lat')::float))
+  //     )
+  //   ) <= 50
+  //   ORDER BY p."createdAt" DESC
+  // `;
+  // console.log(`🚀🤗 ~ >= ~ nearbyPosts:`, nearbyPosts);
 
   // Recursive function to build nested comments
   const buildCommentTree = (
@@ -683,12 +795,12 @@ export const getServerSideProps: GetServerSideProps<
     props: {
       isLoggedIn: !!decodedUser,
       currentUser: currentUser ? JSON.parse(JSON.stringify(currentUser)) : null,
-      nearbyPosts: JSON.parse(JSON.stringify(nearbyPosts || [])),
+      // nearbyPosts: JSON.parse(JSON.stringify(nearbyPosts || [])),
       allPosts: JSON.parse(JSON.stringify(allPosts)),
       darkMode: false,
-      initialCity,
-      initialLat,
-      initialLon,
+      // initialCity,
+      // initialLat,
+      // initialLon,
       currentForestId,
       currentForestName,
     },

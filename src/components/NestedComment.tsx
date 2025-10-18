@@ -7,6 +7,9 @@ import {
   TextField,
   Button,
   Collapse,
+  Tooltip,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import {
   AccountCircle,
@@ -15,6 +18,10 @@ import {
   Spa,
   ExpandMore,
   ExpandLess,
+  MoreVert,
+  Edit,
+  Delete,
+  Share,
 } from "@mui/icons-material";
 import Link from "next/link";
 
@@ -27,37 +34,84 @@ interface NestedCommentData {
   content: string;
   author: Author & { id?: string };
   replies?: NestedCommentData[];
+  createdAt?: string;
+  updatedAt?: string;
+  imageUrl?: string | null;
+  deletedAt?: string | null;
 }
 
 interface NestedCommentProps {
   comment: NestedCommentData;
   postId: string;
   isLoggedIn: boolean;
+  currentUserId?: string;
   level?: number;
-  onReply: (postId: string, parentId: string, content: string) => void;
+  onReply: (
+    postId: string,
+    parentId: string,
+    content: string,
+    imageUrl?: string | null
+  ) => void;
+  onEdit?: (commentId: string, newContent: string) => void;
+  onDelete?: (commentId: string) => void;
   theme: any;
+  onOpenRegister?: () => void;
 }
 
 const NestedComment: React.FC<NestedCommentProps> = ({
   comment,
   postId,
   isLoggedIn,
+  currentUserId,
   level = 0,
   onReply,
+  onEdit,
+  onDelete,
   theme,
+  onOpenRegister,
 }) => {
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [replyText, setReplyText] = useState("");
   // Collapse all non-root comments by default (hide any comment-to-comment replies initially)
   const [isCollapsed, setIsCollapsed] = useState(level > 0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.content);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [shareAnchorEl, setShareAnchorEl] = useState<null | HTMLElement>(null);
+
+  const isOwnComment = currentUserId && comment.author.id === currentUserId;
 
   const handleReplySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (replyText.trim()) {
-      onReply(postId, comment.id, replyText);
+      onReply(postId, comment.id, replyText, null); // TODO: Add image support in future
+      // Auto-expand after submitting a reply
+      setIsCollapsed(false);
       setReplyText("");
       setShowReplyBox(false);
     }
+  };
+
+  const handleEditSubmit = () => {
+    if (editText.trim() && onEdit) {
+      onEdit(comment.id, editText);
+      setIsEditing(false);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (onDelete) {
+      onDelete(comment.id);
+    }
+    setMenuAnchorEl(null);
+  };
+
+  const handleCopyCommentLink = async () => {
+    try {
+      const url = `${window.location.origin}/post/${postId}#comment-${comment.id}`;
+      await navigator.clipboard.writeText(url);
+    } catch {}
+    setShareAnchorEl(null);
   };
 
   const indentLevel = Math.min(level, 4); // Max indent of 4 levels
@@ -119,18 +173,111 @@ const NestedComment: React.FC<NestedCommentProps> = ({
             </Typography>
           )}
 
-          {/* Comment Content */}
-          <Typography
-            variant="body2"
-            sx={{
-              color: theme.palette.text.primary,
-              lineHeight: 1.5,
-              mt: 0.5,
-              mb: 1,
-            }}
+          {/* Timestamp with hover */}
+          <Tooltip
+            title={
+              comment.createdAt
+                ? new Date(comment.createdAt).toLocaleString()
+                : ""
+            }
+            arrow
           >
-            {comment.content}
-          </Typography>
+            <Typography
+              component="span"
+              sx={{
+                color: theme.palette.text.disabled,
+                fontSize: "0.7rem",
+                ml: 1,
+              }}
+            >
+              {comment.createdAt &&
+                new Date(comment.createdAt).toLocaleDateString()}
+              {comment.updatedAt &&
+                comment.updatedAt !== comment.createdAt &&
+                " (edited)"}
+            </Typography>
+          </Tooltip>
+
+          {/* Comment Content or Edit Box */}
+          {isEditing ? (
+            <Box sx={{ mt: 1 }}>
+              <TextField
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                fullWidth
+                multiline
+                size="small"
+                autoFocus
+              />
+              <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+                <Button
+                  size="small"
+                  onClick={handleEditSubmit}
+                  variant="contained"
+                >
+                  Save
+                </Button>
+                <Button
+                  size="small"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditText(comment.content);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </Box>
+            </Box>
+          ) : comment.deletedAt ? (
+            <Typography
+              variant="body2"
+              sx={{
+                color: theme.palette.text.disabled,
+                lineHeight: 1.5,
+                mt: 0.5,
+                mb: 1,
+                fontStyle: "italic",
+              }}
+            >
+              This comment has been deleted
+            </Typography>
+          ) : (
+            <Typography
+              variant="body2"
+              sx={{
+                color: theme.palette.text.primary,
+                lineHeight: 1.5,
+                mt: 0.5,
+                mb: 1,
+              }}
+            >
+              {comment.content}
+            </Typography>
+          )}
+
+          {/* Comment Image */}
+          {comment.imageUrl && (
+            <Box
+              sx={{
+                mt: 1,
+                mb: 1,
+                maxWidth: "300px",
+                borderRadius: 2,
+                overflow: "hidden",
+                border: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              <img
+                src={comment.imageUrl}
+                alt="Comment attachment"
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  display: "block",
+                }}
+              />
+            </Box>
+          )}
 
           {/* Action Buttons */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -161,12 +308,32 @@ const NestedComment: React.FC<NestedCommentProps> = ({
               </IconButton>
             )}
 
-            {/* Reply Button */}
-            {isLoggedIn && !isCollapsed && (
+            {/* Reply Button - allow replying at any depth; prompt register if not logged in */}
+            {!comment.deletedAt && (
               <Button
                 size="small"
                 startIcon={<Reply sx={{ fontSize: "0.875rem" }} />}
-                onClick={() => setShowReplyBox(!showReplyBox)}
+                onClick={() => {
+                  if (!isLoggedIn) {
+                    // If not logged in, open register popup
+                    if (onOpenRegister) {
+                      onOpenRegister();
+                    } else {
+                      // Fallback to redirect if no popup handler
+                      window.location.href = "/#register";
+                    }
+                    return;
+                  }
+                  // Auto-expand replies when clicking reply
+                  if (
+                    isCollapsed &&
+                    comment.replies &&
+                    comment.replies.length > 0
+                  ) {
+                    setIsCollapsed(false);
+                  }
+                  setShowReplyBox(!showReplyBox);
+                }}
                 sx={{
                   color: theme.palette.text.secondary,
                   fontSize: "0.7rem",
@@ -186,6 +353,67 @@ const NestedComment: React.FC<NestedCommentProps> = ({
               >
                 Reply
               </Button>
+            )}
+
+            {/* Share Button */}
+            {!comment.deletedAt && (
+              <>
+                <IconButton
+                  size="small"
+                  onClick={(e) => setShareAnchorEl(e.currentTarget)}
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    padding: 0.25,
+                    "&:hover": {
+                      color: theme.palette.info.main,
+                    },
+                  }}
+                >
+                  <Share sx={{ fontSize: "0.875rem" }} />
+                </IconButton>
+                <Menu
+                  anchorEl={shareAnchorEl}
+                  open={Boolean(shareAnchorEl)}
+                  onClose={() => setShareAnchorEl(null)}
+                >
+                  <MenuItem onClick={handleCopyCommentLink}>Copy link</MenuItem>
+                </Menu>
+              </>
+            )}
+
+            {/* Edit/Delete Menu for Own Comments */}
+            {isOwnComment && !comment.deletedAt && (
+              <>
+                <IconButton
+                  size="small"
+                  onClick={(e) => setMenuAnchorEl(e.currentTarget)}
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    padding: 0.25,
+                  }}
+                >
+                  <MoreVert sx={{ fontSize: "0.875rem" }} />
+                </IconButton>
+                <Menu
+                  anchorEl={menuAnchorEl}
+                  open={Boolean(menuAnchorEl)}
+                  onClose={() => setMenuAnchorEl(null)}
+                >
+                  <MenuItem
+                    onClick={() => {
+                      setIsEditing(true);
+                      setMenuAnchorEl(null);
+                    }}
+                  >
+                    <Edit fontSize="small" sx={{ mr: 1 }} />
+                    Edit
+                  </MenuItem>
+                  <MenuItem onClick={handleDeleteClick}>
+                    <Delete fontSize="small" sx={{ mr: 1 }} />
+                    Delete
+                  </MenuItem>
+                </Menu>
+              </>
             )}
 
             {/* Show collapsed count - only when there are replies (>0) */}
@@ -215,8 +443,8 @@ const NestedComment: React.FC<NestedCommentProps> = ({
               sx={{
                 mt: 1,
                 display: "flex",
-                gap: 1,
                 alignItems: "flex-end",
+                gap: 1,
               }}
             >
               <TextField
@@ -251,6 +479,7 @@ const NestedComment: React.FC<NestedCommentProps> = ({
                   },
                 }}
               />
+              {/* TODO: Add image upload for replies in future */}
               <IconButton
                 type="submit"
                 size="small"
@@ -288,9 +517,13 @@ const NestedComment: React.FC<NestedCommentProps> = ({
                     comment={reply}
                     postId={postId}
                     isLoggedIn={isLoggedIn}
+                    currentUserId={currentUserId}
                     level={level + 1}
                     onReply={onReply}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
                     theme={theme}
+                    onOpenRegister={onOpenRegister}
                   />
                 ))}
               </Box>

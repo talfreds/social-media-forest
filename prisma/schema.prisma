@@ -12,6 +12,7 @@ model User {
   email             String    @unique
   password          String
   name              String?   @unique // Display name - globally unique
+  avatar            String?   @default("monkey") // Avatar type: cat, dog, fish, lizard, monkey
   posts             Post[]
   comments          Comment[]
   forestsCreated    Forest[]  @relation("ForestCreator")
@@ -73,6 +74,7 @@ model Post {
   forest    Forest?   @relation(fields: [forestId], references: [id])
   comments  Comment[]
   location  Json?     // Stores { lat: number, lon: number }
+  imageUrl  String?   // URL to uploaded image
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   
@@ -94,10 +96,13 @@ model Comment {
   parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies     Comment[] @relation("CommentReplies")
   
+  imageUrl    String?   // URL to uploaded image
+  deletedAt   DateTime? // Soft delete timestamp
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
   @@index([authorId])
   @@index([postId])
   @@index([parentId])
+  @@index([deletedAt])
 }

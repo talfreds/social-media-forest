@@ -9,8 +9,6 @@ import {
   MenuItem,
   Box,
   Typography,
-  Switch,
-  FormControlLabel,
   Snackbar,
   Alert,
   Dialog,
@@ -23,7 +21,7 @@ import {
   ListItemText,
   ListItemButton,
 } from "@mui/material";
-import { Brightness7, Brightness4, Forest } from "@mui/icons-material";
+import { Forest, Pets, BugReport, Water, AcUnit } from "@mui/icons-material";
 import RegisterForm from "./RegisterForm";
 import LoginForm from "./LoginForm";
 import LogoutButton from "./LogoutButton";
@@ -33,8 +31,10 @@ interface MenuBarProps {
   darkMode: boolean;
   setDarkMode: (value: boolean) => void;
   isLoggedIn: boolean;
+  currentUser?: { id: string; name: string | null; avatar?: string } | null;
   currentForestId?: string | null;
   currentForestName?: string | null;
+  onOpenRegister?: () => void;
 }
 
 interface ForestData {
@@ -49,8 +49,10 @@ export default function MenuBar({
   darkMode,
   setDarkMode,
   isLoggedIn,
+  currentUser,
   currentForestId,
   currentForestName,
+  onOpenRegister,
 }: MenuBarProps) {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -70,6 +72,22 @@ export default function MenuBar({
   const [newForestPrivate, setNewForestPrivate] = useState(false);
   const [forestError, setForestError] = useState("");
   const [loadingForests, setLoadingForests] = useState(false);
+
+  // Fetch forests on mount for the forest list display
+  useEffect(() => {
+    const fetchForests = async () => {
+      try {
+        const res = await fetch("/api/forests");
+        if (res.ok) {
+          const data = await res.json();
+          setForests(data);
+        }
+      } catch (error) {
+        console.error("Error fetching forests:", error);
+      }
+    };
+    fetchForests();
+  }, []);
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -108,13 +126,11 @@ export default function MenuBar({
 
   const handleSelectForest = (forestId: string | null) => {
     setSelectedForestId(forestId);
-  };
-
-  const handleSwitchForest = () => {
-    if (selectedForestId === null) {
+    // Auto-submit when forest is selected
+    if (forestId === null) {
       router.push("/");
     } else {
-      router.push(`/?forest=${selectedForestId}`);
+      router.push(`/?forest=${forestId}`);
     }
     setChangeForestOpen(false);
   };
@@ -136,6 +152,14 @@ export default function MenuBar({
   };
 
   const handleCreateForest = async () => {
+    if (!isLoggedIn) {
+      setForestError("Please log in to create a forest");
+      if (onOpenRegister) {
+        onOpenRegister();
+      }
+      return;
+    }
+
     if (!newForestName.trim()) {
       setForestError("Forest name is required");
       return;
@@ -167,44 +191,110 @@ export default function MenuBar({
   };
 
   return (
-    <AppBar position="static" color="default" elevation={1}>
+    <AppBar
+      position="static"
+      elevation={1}
+      sx={{
+        bgcolor: darkMode ? "background.paper" : "#4A6741",
+      }}
+    >
       <Toolbar
         sx={{ justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        {/* Left Section - Logo and Forest Navigation */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            flex: 1,
+            overflow: "hidden",
+          }}
+        >
           <Image src="/monkey.svg" alt="Monkey" width={32} height={32} />
-          <Typography
-            variant="h6"
+
+          {/* Current Forest - Clickable */}
+          <Button
+            onClick={() => {
+              if (currentForestId) {
+                router.push(`/?forest=${currentForestId}`);
+              } else {
+                router.push("/");
+              }
+            }}
             sx={{
-              color: darkMode ? "#E8F5E8" : "#FFFFFF",
+              color: "#E8F5E8",
               fontWeight: 700,
               display: { xs: "none", sm: "flex" },
               alignItems: "center",
               gap: 1,
+              textTransform: "none",
+              fontSize: "1.25rem",
+              minWidth: "auto",
+              px: 1,
+              "&:hover": {
+                backgroundColor: "rgba(232, 245, 232, 0.1)",
+              },
             }}
           >
             <Forest fontSize="small" />
             {currentForestName || "All Forests"}
-          </Typography>
+          </Button>
+
+          {/* Other Forests - Truncated List */}
+          <Box
+            sx={{
+              display: { xs: "none", md: "flex" },
+              gap: 0.5,
+              overflow: "hidden",
+            }}
+          >
+            {forests
+              .filter((f) => f.id !== currentForestId)
+              .slice(0, 3)
+              .map((forest) => (
+                <Button
+                  key={forest.id}
+                  onClick={() => router.push(`/?forest=${forest.id}`)}
+                  sx={{
+                    color: "rgba(232, 245, 232, 0.6)",
+                    fontSize: "0.8rem",
+                    textTransform: "none",
+                    minWidth: "auto",
+                    px: 1,
+                    py: 0.5,
+                    maxWidth: "120px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    "&:hover": {
+                      color: "#E8F5E8",
+                      backgroundColor: "rgba(232, 245, 232, 0.1)",
+                    },
+                  }}
+                >
+                  {forest.name}
+                </Button>
+              ))}
+          </Box>
         </Box>
 
+        {/* Center Section - Forest Management */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {isLoggedIn && (
-            <Button
-              variant="outlined"
-              href="/friends"
-              sx={{
-                minWidth: "auto",
-                display: { xs: "none", sm: "flex" },
-              }}
-            >
-              Friends
-            </Button>
-          )}
           <Button
             variant="outlined"
             onClick={handleOpenChangeForest}
-            sx={{ minWidth: "auto" }}
+            sx={{
+              minWidth: "auto",
+              borderColor: darkMode ? "#B8D4B8" : "#E8F5E8",
+              color: "#E8F5E8",
+              "&:hover": {
+                borderColor: "#FFFFFF",
+                backgroundColor: darkMode
+                  ? "rgba(184, 212, 184, 0.1)"
+                  : "rgba(232, 245, 232, 0.1)",
+              },
+            }}
           >
             Change Forest
           </Button>
@@ -219,6 +309,63 @@ export default function MenuBar({
           >
             New Forest
           </Button>
+        </Box>
+
+        {/* Right Section - User Actions */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {isLoggedIn && (
+            <Button
+              variant="outlined"
+              href="/friends"
+              sx={{
+                minWidth: "auto",
+                display: { xs: "none", sm: "flex" },
+                borderColor: darkMode ? "#B8D4B8" : "#E8F5E8",
+                color: "#E8F5E8",
+                "&:hover": {
+                  borderColor: "#FFFFFF",
+                  backgroundColor: darkMode
+                    ? "rgba(184, 212, 184, 0.1)"
+                    : "rgba(232, 245, 232, 0.1)",
+                },
+              }}
+            >
+              Friends
+            </Button>
+          )}
+          {isLoggedIn && currentUser && (
+            <Button
+              variant="outlined"
+              href={`/user/${currentUser.id}`}
+              sx={{
+                minWidth: "auto",
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                textTransform: "none",
+                borderRadius: 2,
+                px: 2,
+                py: 0.5,
+                borderColor: darkMode ? "#B8D4B8" : "#E8F5E8",
+                color: "#E8F5E8",
+                "&:hover": {
+                  borderColor: "#FFFFFF",
+                  backgroundColor: darkMode
+                    ? "rgba(184, 212, 184, 0.1)"
+                    : "rgba(232, 245, 232, 0.1)",
+                },
+              }}
+            >
+              {currentUser.avatar === "cat" && <Pets fontSize="small" />}
+              {currentUser.avatar === "dog" && <BugReport fontSize="small" />}
+              {currentUser.avatar === "fish" && <Water fontSize="small" />}
+              {currentUser.avatar === "lizard" && <AcUnit fontSize="small" />}
+              {(currentUser.avatar === "monkey" || !currentUser.avatar) && (
+                <Forest fontSize="small" />
+              )}
+              {currentUser.name || "User"}
+            </Button>
+          )}
           {!isLoggedIn ? (
             <>
               <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1 } }}>
@@ -266,45 +413,6 @@ export default function MenuBar({
           ) : (
             <LogoutButton />
           )}
-          <FormControlLabel
-            control={
-              <Switch
-                checked={darkMode}
-                onChange={() => setDarkMode(!darkMode)}
-                sx={{
-                  mx: 1, // Consistent spacing around switch
-                  "& .MuiSwitch-switchBase": {
-                    // Base state (unchecked, light mode)
-                    "& .MuiSwitch-thumb": {
-                      bgcolor: "grey.500", // Neutral gray thumb in light mode
-                    },
-                    "& .MuiSwitch-track": {
-                      bgcolor: "grey.300", // Light gray track in light mode
-                    },
-                  },
-                  "& .MuiSwitch-switchBase.Mui-checked": {
-                    // Checked state (dark mode)
-                    "& .MuiSwitch-thumb": {
-                      bgcolor: "grey.800", // Dark gray thumb in dark mode
-                    },
-                    "& .MuiSwitch-track": {
-                      bgcolor: "grey.600", // Darker track in dark mode
-                    },
-                  },
-                }}
-              />
-            }
-            label={
-              <Typography
-                variant="body2"
-                color="text.primary" // Adapts to theme (black in light, white in dark)
-                sx={{ ml: 0.5 }}
-              >
-                {darkMode ? "Dark" : "Light"}
-              </Typography>
-            }
-            sx={{ m: 0 }} // No extra margin, rely on Toolbar spacing
-          />
         </Box>
         <Snackbar
           open={showLoginError}
@@ -406,32 +514,6 @@ export default function MenuBar({
                 )}
               </List>
             )}
-
-            <Box
-              sx={{
-                mt: 3,
-                display: "flex",
-                gap: 2,
-                justifyContent: "flex-end",
-              }}
-            >
-              <Button
-                onClick={handleCloseChangeForest}
-                sx={{ color: "#6B8B5A" }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleSwitchForest}
-                sx={{
-                  bgcolor: "#4A6741",
-                  "&:hover": { bgcolor: "#6B8B5A" },
-                }}
-              >
-                Switch Forest
-              </Button>
-            </Box>
           </DialogContent>
         </Dialog>
 
