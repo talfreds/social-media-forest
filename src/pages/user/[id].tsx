@@ -64,8 +64,6 @@ export default function UserProfile({
   return (
     <>
       <MenuBar
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
         currentForestId={null}
         currentForestName={null}
@@ -350,7 +348,7 @@ export default function UserProfile({
                   <Forest /> Forests Created
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {forests.map((forest) => (
+                  {forests.map(forest => (
                     <Box
                       key={forest.id}
                       sx={{
@@ -413,7 +411,7 @@ export default function UserProfile({
               </Typography>
               {posts.length > 0 ? (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {posts.map((post) => (
+                  {posts.map(post => (
                     <Link
                       key={post.id}
                       href={`/post/${post.id}`}
@@ -509,7 +507,7 @@ export default function UserProfile({
               </Typography>
               {comments.length > 0 ? (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {comments.map((comment) => (
+                  {comments.map(comment => (
                     <Link
                       key={comment.id}
                       href={`/post/${comment.post.id}#comment-${comment.id}`}
@@ -582,7 +580,7 @@ export default function UserProfile({
 
 export const getServerSideProps: GetServerSideProps<
   Omit<Props, "setDarkMode">
-> = async (context) => {
+> = async context => {
   const userId = context.params?.id as string;
 
   if (!userId) {

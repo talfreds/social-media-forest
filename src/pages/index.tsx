@@ -97,8 +97,8 @@ export default function Home({
 
       if (response.ok) {
         // Remove the comment from the UI optimistically
-        setPosts((prevPosts) =>
-          prevPosts.map((post) => ({
+        setPosts(prevPosts =>
+          prevPosts.map(post => ({
             ...post,
             comments: removeCommentFromTree(post.comments, commentId),
           }))
@@ -120,8 +120,8 @@ export default function Home({
     commentId: string
   ): Comment[] => {
     return comments
-      .filter((comment) => comment.id !== commentId)
-      .map((comment) => ({
+      .filter(comment => comment.id !== commentId)
+      .map(comment => ({
         ...comment,
         replies: comment.replies
           ? removeCommentFromTree(comment.replies, commentId)
@@ -147,7 +147,7 @@ export default function Home({
     };
 
     // Update UI immediately
-    setPosts((prevPosts) => [tempPost, ...prevPosts]);
+    setPosts(prevPosts => [tempPost, ...prevPosts]);
     setNewPost("");
     setNewPostImage(null);
 
@@ -166,8 +166,8 @@ export default function Home({
       if (res.ok) {
         const newPostData = await res.json();
         // Replace temp post with real one, ensuring author is included
-        setPosts((prevPosts) =>
-          prevPosts.map((post) =>
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
             post.id === tempPost.id
               ? {
                   ...newPostData,
@@ -180,16 +180,14 @@ export default function Home({
       } else {
         console.error("Post creation failed:", await res.json());
         // Revert optimistic update
-        setPosts((prevPosts) =>
-          prevPosts.filter((post) => post.id !== tempPost.id)
+        setPosts(prevPosts =>
+          prevPosts.filter(post => post.id !== tempPost.id)
         );
       }
     } catch (error) {
       console.error("Error submitting post:", error);
       // Revert optimistic update
-      setPosts((prevPosts) =>
-        prevPosts.filter((post) => post.id !== tempPost.id)
-      );
+      setPosts(prevPosts => prevPosts.filter(post => post.id !== tempPost.id));
     }
   };
 
@@ -229,7 +227,7 @@ export default function Home({
         return [...comments, tempComment];
       }
       // Find parent and add as reply
-      return comments.map((comment) => {
+      return comments.map(comment => {
         if (comment.id === parentId) {
           return {
             ...comment,
@@ -247,8 +245,8 @@ export default function Home({
     };
 
     // Update UI immediately
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
+    setPosts(prevPosts =>
+      prevPosts.map(post =>
         post.id === postId
           ? { ...post, comments: addCommentToTree(post.comments, parentId) }
           : post
@@ -257,7 +255,7 @@ export default function Home({
 
     // Clear the input
     if (!parentId) {
-      setReplyInputs((prev) => ({ ...prev, [postId]: "" }));
+      setReplyInputs(prev => ({ ...prev, [postId]: "" }));
     }
 
     // Send to server
@@ -273,7 +271,7 @@ export default function Home({
 
         // Helper function to recursively replace temp comment with real one
         const replaceComment = (comments: Comment[]): Comment[] => {
-          return comments.map((comment) => {
+          return comments.map(comment => {
             if (comment.id === tempComment.id) {
               return {
                 ...newComment,
@@ -291,8 +289,8 @@ export default function Home({
         };
 
         // Update with real comment data
-        setPosts((prevPosts) =>
-          prevPosts.map((post) =>
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
             post.id === postId
               ? {
                   ...post,
@@ -316,8 +314,6 @@ export default function Home({
   return (
     <>
       <MenuBar
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
         currentUser={currentUser}
         currentForestId={currentForestId}
@@ -386,14 +382,14 @@ export default function Home({
               maxWidth: "95%",
             }}
           >
-            {posts.filter((post) =>
+            {posts.filter(post =>
               currentForestId ? post.forestId === currentForestId : true
             ).length > 0 ? (
               posts
-                .filter((post) =>
+                .filter(post =>
                   currentForestId ? post.forestId === currentForestId : true
                 )
-                .map((post) => (
+                .map(post => (
                   <TreePost
                     key={post.id}
                     id={post.id}
@@ -495,7 +491,7 @@ export default function Home({
                   >
                     <TextField
                       value={newPost}
-                      onChange={(e) => {
+                      onChange={e => {
                         const value = e.target.value;
                         setNewPost(value);
                       }}
@@ -529,7 +525,7 @@ export default function Home({
                     />
 
                     <ImageUpload
-                      onImageUpload={(url) => setNewPostImage(url)}
+                      onImageUpload={url => setNewPostImage(url)}
                       onImageRemove={() => setNewPostImage(null)}
                       currentImage={newPostImage}
                       darkMode={darkMode}
@@ -681,7 +677,7 @@ export default function Home({
 
 export const getServerSideProps: GetServerSideProps<
   Omit<Props, "setDarkMode">
-> = async (context) => {
+> = async context => {
   const cookies = parse(context.req.headers.cookie || "");
   const token = cookies.authToken;
   const decodedUser = token ? verifyToken(token) : null;
@@ -767,8 +763,8 @@ export const getServerSideProps: GetServerSideProps<
     parentId: number | null = null
   ): any[] => {
     return comments
-      .filter((comment) => comment.parentId === parentId)
-      .map((comment) => ({
+      .filter(comment => comment.parentId === parentId)
+      .map(comment => ({
         ...comment,
         replies: buildCommentTree(comments, comment.id),
       }));
@@ -786,7 +782,7 @@ export const getServerSideProps: GetServerSideProps<
   });
 
   // Build nested comment structure for each post
-  const allPosts = postsWithComments.map((post) => ({
+  const allPosts = postsWithComments.map(post => ({
     ...post,
     comments: buildCommentTree(post.comments),
   }));

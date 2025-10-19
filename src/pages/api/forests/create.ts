@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { PrismaClient } from "@prisma/client";
-import { verifyToken } from "../../../lib/auth";
-import { parse } from "cookie";
+import { requireAuth, setSecurityHeaders } from "../../../lib/security";
+import { validators } from "../../../lib/validation";
+import { handleApiError } from "../../../lib/error-handler";
 
 const prisma = new PrismaClient();
 
@@ -11,40 +12,48 @@ export default async function handler(
 ) {
   if (req.method !== "POST") return res.status(405).end();
 
-  const cookies = parse(req.headers.cookie || "");
-  const token = cookies.authToken;
+  setSecurityHeaders(res);
 
-  if (!token) return res.status(401).json({ error: "Not authenticated" });
+  requireAuth(req, res, async () => {
+    try {
+      const validation = validators.forest(req.body);
+      if (!validation) {
+        return res.status(400).json({
+          error: "Invalid input",
+          details: validators.forest.errors?.map(
+            e =>
+              `${(e as any).instancePath || (e as any).schemaPath}: ${
+                e.message
+              }`
+          ),
+        });
+      }
 
-  try {
-    const decoded = verifyToken(token);
-    if (!decoded || !decoded.userId) {
-      return res.status(401).json({ error: "Invalid token" });
+      const { name, description, isPrivate } = req.body;
+      const userId = (req as any).user.userId;
+
+      if (!name || name.trim().length === 0) {
+        return res.status(400).json({ error: "Forest name is required" });
+      }
+
+      const forest = await prisma.forest.create({
+        data: {
+          name: name.trim(),
+          description: description?.trim() || null,
+          isPrivate: isPrivate === true,
+          creatorId: userId,
+        },
+      });
+
+      res.status(201).json(forest);
+    } catch (error: any) {
+      console.error("Forest creation error:", error);
+      if (error.code === "P2002") {
+        return res
+          .status(400)
+          .json({ error: "A forest with this name already exists" });
+      }
+      handleApiError(error, res);
     }
-
-    const { name, description, isPrivate } = req.body;
-
-    if (!name || name.trim().length === 0) {
-      return res.status(400).json({ error: "Forest name is required" });
-    }
-
-    const forest = await prisma.forest.create({
-      data: {
-        name: name.trim(),
-        description: description?.trim() || null,
-        isPrivate: isPrivate === true,
-        creatorId: decoded.userId,
-      },
-    });
-
-    res.status(201).json(forest);
-  } catch (error: any) {
-    console.error("Forest creation error:", error);
-    if (error.code === "P2002") {
-      return res
-        .status(400)
-        .json({ error: "A forest with this name already exists" });
-    }
-    res.status(500).json({ error: "Failed to create forest" });
-  }
+  });
 }

@@ -12,11 +12,13 @@
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "type-check": "npx tsc --noEmit",
-    "pre-deploy": "npm run type-check && npm run lint && npm run test && npm run build"
+    "pre-deploy": "npm run format:check && npm run type-check && npm run lint && npm run test && npm run build"
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
@@ -30,7 +32,9 @@
     "jsonwebtoken": "^9.0.2",
     "next": "15.1.7",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

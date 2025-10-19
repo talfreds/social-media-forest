@@ -33,7 +33,6 @@ export function rateLimit(config: RateLimitConfig) {
     }
 
     if (current.count >= config.maxRequests) {
-      // Rate limit exceeded
       res.status(429).json({
         error: config.message || "Too many requests",
         retryAfter: Math.ceil((current.resetTime - now) / 1000),

@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { setSecurityHeaders } from "../../lib/security";
 import prisma from "../../lib/prisma";
 
 export default async function handler(
@@ -8,6 +9,8 @@ export default async function handler(
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+
+  setSecurityHeaders(res);
 
   try {
     // Test database connection

@@ -82,13 +82,13 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
   return (
     <Fade in={isVisible}>
       <Paper
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (e.key === "Tab") e.stopPropagation();
         }}
         elevation={6}
         sx={{
           width: "100%",
-          maxWidth: 400,
+          maxWidth: "100%",
           p: { xs: 2, sm: 3 },
           borderRadius: 2,
           bgcolor: "background.paper",
@@ -125,7 +125,7 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
             label="Email"
             type="email"
             value={data.email}
-            onChange={(e) => setData({ ...data, email: e.target.value })}
+            onChange={e => setData({ ...data, email: e.target.value })}
             fullWidth
             variant="outlined"
             size="medium"
@@ -145,7 +145,7 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
             label="Password"
             type={showPassword ? "text" : "password"}
             value={data.password}
-            onChange={(e) => setData({ ...data, password: e.target.value })}
+            onChange={e => setData({ ...data, password: e.target.value })}
             fullWidth
             variant="outlined"
             size="medium"
@@ -178,7 +178,7 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
             label="Display Name"
             type="text"
             value={data.name}
-            onChange={(e) => setData({ ...data, name: e.target.value })}
+            onChange={e => setData({ ...data, name: e.target.value })}
             fullWidth
             variant="outlined"
             size="medium"
@@ -200,7 +200,7 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
               Choose Your Avatar
             </Typography>
             <Grid container spacing={1}>
-              {avatarOptions.map((option) => {
+              {avatarOptions.map(option => {
                 const IconComponent = option.icon;
                 return (
                   <Grid item xs={2.4} key={option.value}>

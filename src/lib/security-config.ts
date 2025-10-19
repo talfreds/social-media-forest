@@ -133,9 +133,7 @@ export const getSecurityConfig = () => {
     ...securityConfig,
     headers: {
       ...securityConfig.headers,
-      csp: isProduction
-        ? securityConfig.headers.csp.production
-        : securityConfig.headers.csp.development,
+  
     },
     session: {
       ...securityConfig.session,

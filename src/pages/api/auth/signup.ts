@@ -14,12 +14,10 @@ export default async function handler(
 ) {
   if (req.method !== "POST") return res.status(405).end();
 
-  // Apply security headers
   setSecurityHeaders(res);
 
-  // Apply rate limiting
   if (!authRateLimit(req, res)) {
-    return; // Rate limit exceeded
+    return;
   }
 
   // Validate input
@@ -28,8 +26,7 @@ export default async function handler(
     return res.status(400).json({
       error: "Invalid input",
       details: validators.signup.errors?.map(
-        (e) =>
-          `${(e as any).instancePath || (e as any).schemaPath}: ${e.message}`
+        e => `${(e as any).instancePath || (e as any).schemaPath}: ${e.message}`
       ),
     });
   }

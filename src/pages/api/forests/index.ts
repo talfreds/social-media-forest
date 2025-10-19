@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { PrismaClient } from "@prisma/client";
 import { verifyToken } from "../../../lib/auth";
 import { parse } from "cookie";
+import { setSecurityHeaders } from "../../../lib/security";
+import { handleApiError } from "../../../lib/error-handler";
 
 const prisma = new PrismaClient();
 
@@ -10,6 +12,8 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method !== "GET") return res.status(405).end();
+
+  setSecurityHeaders(res);
 
   try {
     const cookies = parse(req.headers.cookie || "");
@@ -26,9 +30,8 @@ export default async function handler(
       orderBy: { createdAt: "desc" },
     });
 
-    // If user is not logged in, only show public forests
     if (!currentUserId) {
-      const publicForests = allForests.filter((forest) => !forest.isPrivate);
+      const publicForests = allForests.filter(forest => !forest.isPrivate);
       return res.status(200).json(publicForests);
     }
 
@@ -49,12 +52,12 @@ export default async function handler(
     });
 
     // Extract friend IDs
-    const friendIds = friendships.map((f) =>
+    const friendIds = friendships.map(f =>
       f.initiatorId === currentUserId ? f.receiverId : f.initiatorId
     );
 
     // Filter forests based on access
-    const accessibleForests = allForests.filter((forest) => {
+    const accessibleForests = allForests.filter(forest => {
       // Public forests are visible to everyone
       if (!forest.isPrivate) return true;
 
@@ -70,6 +73,6 @@ export default async function handler(
     res.status(200).json(accessibleForests);
   } catch (error) {
     console.error("Error fetching forests:", error);
-    res.status(500).json({ error: "Failed to fetch forests" });
+    handleApiError(error, res);
   }
 }

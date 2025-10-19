@@ -3,6 +3,7 @@ import { rateLimit } from "./rate-limiter";
 import { validateInput, sanitizeString, sanitizeHtml } from "./validation";
 import { handleApiError, AppError } from "./error-handler";
 import { getSecurityConfig } from "./security-config";
+import { verifyToken } from "./auth";
 
 // Security headers middleware
 export function setSecurityHeaders(res: NextApiResponse) {
@@ -14,11 +15,14 @@ export function setSecurityHeaders(res: NextApiResponse) {
   });
 
   // Set CSP based on environment
-  const csp =
-    process.env.NODE_ENV === "production"
-      ? (config.headers.csp as any).production
-      : (config.headers.csp as any).development;
-  res.setHeader("Content-Security-Policy", csp);
+  const csp = config.headers.csp;
+  if (csp && typeof csp === "object") {
+    const cspValue =
+      process.env.NODE_ENV === "production" ? csp.production : csp.development;
+    if (cspValue) {
+      res.setHeader("Content-Security-Policy", cspValue);
+    }
+  }
 }
 
 // Input sanitization middleware
@@ -30,7 +34,7 @@ export function sanitizeInput(
   try {
     if (req.body && typeof req.body === "object") {
       // Sanitize string fields
-      Object.keys(req.body).forEach((key) => {
+      Object.keys(req.body).forEach(key => {
         if (typeof req.body[key] === "string") {
           if (key === "content" || key === "description") {
             // For content fields, allow more formatting but sanitize HTML
@@ -55,12 +59,10 @@ export function validateRequest<T>(
 ) {
   return (req: NextApiRequest, res: NextApiResponse, next: () => void) => {
     try {
-      // Apply rate limiting if provided
       if (rateLimiter && !rateLimiter(req, res)) {
-        return; // Rate limit exceeded, response already sent
+        return;
       }
 
-      // Validate input
       const validation = validateInput<T>(validator, req.body);
 
       if (!validation.isValid) {
@@ -94,8 +96,14 @@ export function requireAuth(
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    // Token validation would go here (using your existing auth system)
-    // For now, we'll assume the token is valid if it exists
+    // Validate token using existing auth system
+    const decoded = verifyToken(token);
+    if (!decoded || !decoded.userId) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    // Add user info to request for use in handlers
+    (req as any).user = decoded;
     next();
   } catch (error) {
     handleApiError(error, res);
@@ -171,7 +179,7 @@ export function preventSqlInjection(
   ];
 
   const checkString = (str: string) => {
-    return sqlPatterns.some((pattern) => pattern.test(str));
+    return sqlPatterns.some(pattern => pattern.test(str));
   };
 
   try {
@@ -232,6 +240,18 @@ export const authRateLimit = rateLimit(config.rateLimits.auth);
 export const commentRateLimit = rateLimit(config.rateLimits.content.comments);
 
 export const postRateLimit = rateLimit(config.rateLimits.content.posts);
+
+export const deleteRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 10,
+  message: "Too many delete requests, please slow down.",
+});
+
+export const uploadRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 20,
+  message: "Too many uploads, please slow down.",
+});
 
 // Comprehensive security middleware
 export function applySecurityMiddleware(

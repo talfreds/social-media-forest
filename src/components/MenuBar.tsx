@@ -1,6 +1,7 @@
 // components/MenuBar.tsx
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useTheme } from "@mui/material/styles";
 import {
   AppBar,
   Toolbar,
@@ -20,6 +21,9 @@ import {
   ListItem,
   ListItemText,
   ListItemButton,
+  FormControlLabel,
+  Checkbox,
+  Divider,
 } from "@mui/material";
 import { Forest, Pets, BugReport, Water, AcUnit } from "@mui/icons-material";
 import RegisterForm from "./RegisterForm";
@@ -28,8 +32,6 @@ import LogoutButton from "./LogoutButton";
 import Image from "next/image";
 
 interface MenuBarProps {
-  darkMode: boolean;
-  setDarkMode: (value: boolean) => void;
   isLoggedIn: boolean;
   currentUser?: { id: string; name: string | null; avatar?: string } | null;
   currentForestId?: string | null;
@@ -46,8 +48,6 @@ interface ForestData {
 }
 
 export default function MenuBar({
-  darkMode,
-  setDarkMode,
   isLoggedIn,
   currentUser,
   currentForestId,
@@ -55,6 +55,7 @@ export default function MenuBar({
   onOpenRegister,
 }: MenuBarProps) {
   const router = useRouter();
+  const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [formType, setFormType] = useState<"register" | "login" | null>(null);
   const [showLoginError, setShowLoginError] = useState(false);
@@ -195,7 +196,7 @@ export default function MenuBar({
       position="static"
       elevation={1}
       sx={{
-        bgcolor: darkMode ? "background.paper" : "#4A6741",
+        bgcolor: theme.palette.primary.main,
       }}
     >
       <Toolbar
@@ -250,9 +251,9 @@ export default function MenuBar({
             }}
           >
             {forests
-              .filter((f) => f.id !== currentForestId)
+              .filter(f => f.id !== currentForestId)
               .slice(0, 3)
-              .map((forest) => (
+              .map(forest => (
                 <Button
                   key={forest.id}
                   onClick={() => router.push(`/?forest=${forest.id}`)}
@@ -286,13 +287,11 @@ export default function MenuBar({
             onClick={handleOpenChangeForest}
             sx={{
               minWidth: "auto",
-              borderColor: darkMode ? "#B8D4B8" : "#E8F5E8",
-              color: "#E8F5E8",
+              borderColor: theme.palette.primary.contrastText,
+              color: theme.palette.primary.contrastText,
               "&:hover": {
-                borderColor: "#FFFFFF",
-                backgroundColor: darkMode
-                  ? "rgba(184, 212, 184, 0.1)"
-                  : "rgba(232, 245, 232, 0.1)",
+                borderColor: theme.palette.primary.contrastText,
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
               },
             }}
           >
@@ -309,6 +308,23 @@ export default function MenuBar({
           >
             New Forest
           </Button>
+          {isLoggedIn && (
+            <Button
+              variant="contained"
+              onClick={() => {
+                setNewForestPrivate(true);
+                handleOpenCreateForest();
+              }}
+              sx={{
+                bgcolor: "#8B4513",
+                "&:hover": { bgcolor: "#A0522D" },
+                minWidth: "auto",
+                display: { xs: "none", sm: "flex" },
+              }}
+            >
+              🔒 Secret Forest
+            </Button>
+          )}
         </Box>
 
         {/* Right Section - User Actions */}
@@ -320,13 +336,11 @@ export default function MenuBar({
               sx={{
                 minWidth: "auto",
                 display: { xs: "none", sm: "flex" },
-                borderColor: darkMode ? "#B8D4B8" : "#E8F5E8",
-                color: "#E8F5E8",
+                borderColor: theme.palette.primary.contrastText,
+                color: theme.palette.primary.contrastText,
                 "&:hover": {
-                  borderColor: "#FFFFFF",
-                  backgroundColor: darkMode
-                    ? "rgba(184, 212, 184, 0.1)"
-                    : "rgba(232, 245, 232, 0.1)",
+                  borderColor: theme.palette.primary.contrastText,
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
                 },
               }}
             >
@@ -346,13 +360,11 @@ export default function MenuBar({
                 borderRadius: 2,
                 px: 2,
                 py: 0.5,
-                borderColor: darkMode ? "#B8D4B8" : "#E8F5E8",
-                color: "#E8F5E8",
+                borderColor: theme.palette.primary.contrastText,
+                color: theme.palette.primary.contrastText,
                 "&:hover": {
-                  borderColor: "#FFFFFF",
-                  backgroundColor: darkMode
-                    ? "rgba(184, 212, 184, 0.1)"
-                    : "rgba(232, 245, 232, 0.1)",
+                  borderColor: theme.palette.primary.contrastText,
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
                 },
               }}
             >
@@ -372,7 +384,7 @@ export default function MenuBar({
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={(e) => handleMenuOpen(e, "register")}
+                  onClick={e => handleMenuOpen(e, "register")}
                   size="medium"
                   sx={{ minWidth: { xs: "80px", sm: "100px" } }} // Smaller on mobile
                 >
@@ -381,7 +393,7 @@ export default function MenuBar({
                 <Button
                   variant="contained"
                   color="secondary"
-                  onClick={(e) => handleMenuOpen(e, "login")}
+                  onClick={e => handleMenuOpen(e, "login")}
                   size="medium"
                   sx={{ minWidth: { xs: "80px", sm: "100px" } }}
                 >
@@ -471,7 +483,7 @@ export default function MenuBar({
                 </ListItemButton>
 
                 {/* Forest list */}
-                {forests.map((forest) => (
+                {forests.map(forest => (
                   <ListItemButton
                     key={forest.id}
                     selected={selectedForestId === forest.id}
@@ -536,7 +548,7 @@ export default function MenuBar({
             <TextField
               label="Forest Name"
               value={newForestName}
-              onChange={(e) => setNewForestName(e.target.value)}
+              onChange={e => setNewForestName(e.target.value)}
               fullWidth
               sx={{ mb: 2 }}
               error={!!forestError}
@@ -545,13 +557,48 @@ export default function MenuBar({
             <TextField
               label="Description (optional)"
               value={newForestDesc}
-              onChange={(e) => setNewForestDesc(e.target.value)}
+              onChange={e => setNewForestDesc(e.target.value)}
               fullWidth
               multiline
               rows={3}
               sx={{ mb: 2 }}
               placeholder="Describe the vibe and purpose of your forest..."
             />
+
+            <Divider sx={{ my: 2 }} />
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={newForestPrivate}
+                  onChange={e => setNewForestPrivate(e.target.checked)}
+                  sx={{
+                    color: "#4A6741",
+                    "&.Mui-checked": {
+                      color: "#4A6741",
+                    },
+                  }}
+                />
+              }
+              label={
+                <Box>
+                  <Typography
+                    variant="body1"
+                    sx={{ fontWeight: 600, color: "#4A6741" }}
+                  >
+                    🔒 Create as Secret Forest
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "#6B8B5A", mt: 0.5 }}
+                  >
+                    Only you and your accepted friends can see this forest
+                  </Typography>
+                </Box>
+              }
+              sx={{ mb: 2, alignItems: "flex-start" }}
+            />
+
             {forestError && (
               <Typography variant="body2" sx={{ color: "error.main", mb: 2 }}>
                 {forestError}

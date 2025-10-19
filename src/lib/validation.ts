@@ -124,6 +124,9 @@ export const validationSchemas = {
         maxLength: 1000,
         pattern: "^[\\s\\S]*$",
       },
+      isPrivate: {
+        type: "boolean",
+      },
     },
     additionalProperties: false,
   },

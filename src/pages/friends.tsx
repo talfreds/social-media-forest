@@ -159,8 +159,6 @@ export default function FriendsPage({
       </Head>
 
       <MenuBar
-        darkMode={darkMode}
-        setDarkMode={() => {}}
         isLoggedIn={true}
         currentForestId={null}
         currentForestName={null}
@@ -250,8 +248,8 @@ export default function FriendsPage({
                   fullWidth
                   placeholder="Enter username"
                   value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                  onKeyPress={(e) => {
+                  onChange={e => setSearchName(e.target.value)}
+                  onKeyPress={e => {
                     if (e.key === "Enter") handleSendRequest();
                   }}
                   sx={{
@@ -342,7 +340,7 @@ export default function FriendsPage({
                     <Box
                       sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                     >
-                      {friends.map((friendship) => (
+                      {friends.map(friendship => (
                         <Card
                           key={friendship.friendshipId}
                           sx={{
@@ -442,7 +440,7 @@ export default function FriendsPage({
                     <Box
                       sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                     >
-                      {receivedRequests.map((request) => (
+                      {receivedRequests.map(request => (
                         <Card
                           key={request.requestId}
                           sx={{
@@ -545,7 +543,7 @@ export default function FriendsPage({
                     <Box
                       sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                     >
-                      {sentRequests.map((request) => (
+                      {sentRequests.map(request => (
                         <Card
                           key={request.requestId}
                           sx={{

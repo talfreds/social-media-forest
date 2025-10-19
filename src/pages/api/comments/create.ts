@@ -14,12 +14,10 @@ export default async function handler(
 ) {
   if (req.method !== "POST") return res.status(405).end();
 
-  // Apply security headers
   setSecurityHeaders(res);
 
-  // Apply rate limiting
   if (!commentRateLimit(req, res)) {
-    return; // Rate limit exceeded
+    return;
   }
 
   const cookies = parse(req.headers.cookie || "");
@@ -35,13 +33,12 @@ export default async function handler(
 
     const userId = decoded.userId;
 
-    // Validate input
     const validation = validators.comment(req.body);
     if (!validation) {
       return res.status(400).json({
         error: "Invalid input",
         details: validators.comment.errors?.map(
-          (e) =>
+          e =>
             `${(e as any).instancePath || (e as any).schemaPath}: ${e.message}`
         ),
       });
@@ -49,12 +46,10 @@ export default async function handler(
 
     const { content, postId, parentId, imageUrl } = req.body;
 
-    // Validate postId
     if (!postId || typeof postId !== "string" || postId.trim().length === 0) {
       return res.status(400).json({ error: "Invalid post ID" });
     }
 
-    // Validate parentId if provided
     if (
       parentId &&
       (typeof parentId !== "string" || parentId.trim().length === 0)

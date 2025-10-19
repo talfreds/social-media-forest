@@ -130,8 +130,6 @@ export default function PostPage({
   return (
     <>
       <MenuBar
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
         isLoggedIn={isLoggedIn}
         currentUser={currentUser}
         currentForestId={post.forest?.id || null}

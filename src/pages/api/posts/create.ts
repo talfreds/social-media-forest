@@ -12,12 +12,10 @@ export default async function handler(
   if (req.method !== "POST")
     return res.status(405).json({ error: "Method not allowed" });
 
-  // Apply security headers
   setSecurityHeaders(res);
 
-  // Apply rate limiting
   if (!postRateLimit(req, res)) {
-    return; // Rate limit exceeded
+    return;
   }
 
   const token = req.cookies.authToken;
@@ -31,8 +29,7 @@ export default async function handler(
     return res.status(400).json({
       error: "Invalid input",
       details: validators.post.errors?.map(
-        (e) =>
-          `${(e as any).instancePath || (e as any).schemaPath}: ${e.message}`
+        e => `${(e as any).instancePath || (e as any).schemaPath}: ${e.message}`
       ),
     });
   }

@@ -52,8 +52,11 @@ jobs:
       - name: Run unit tests
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test_db
-          JWT_SECRET: test-secret-key
+          JWT_SECRET: JWT_SECRET=15e11047101099bcf1e38c03e24c9d8d48d2a35a5ffc6abd89e9f942e8755edee31b0e54e38c03e24c
         run: npm test
+
+      - name: Check formatting
+        run: npm run format:check
 
       - name: Run linting
         run: npm run lint
