@@ -50,6 +50,37 @@ export default function RegisterForm({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false,
+    name: false,
+  });
+
+  // Validation functions
+  const validatePassword = (password: string) => {
+    const errors = [];
+    if (password.length < 8) errors.push("at least 8 characters");
+    if (!/[a-z]/.test(password)) errors.push("one lowercase letter");
+    if (!/[A-Z]/.test(password)) errors.push("one uppercase letter");
+    if (!/\d/.test(password)) errors.push("one number");
+    return errors;
+  };
+
+  const validateName = (name: string) => {
+    const errors = [];
+    if (name.length < 2) errors.push("at least 2 characters");
+    if (name.length > 50) errors.push("max 50 characters");
+    if (!/^[a-zA-Z0-9_\-\s]+$/.test(name))
+      errors.push("only letters, numbers, spaces, _ and -");
+    return errors;
+  };
+
+  const validateEmail = (email: string) => {
+    if (!email) return ["required"];
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      return ["valid email format"];
+    return [];
+  };
 
   // Generate suggested display name from email
   const generateDisplayName = (email: string) => {
@@ -158,16 +189,27 @@ export default function RegisterForm({
             type="email"
             value={data.email}
             onChange={e => handleEmailChange(e.target.value)}
+            onBlur={() => setTouched({ ...touched, email: true })}
             fullWidth
             variant="outlined"
             size="medium"
-            error={!!errorMessage}
+            required
+            error={touched.email && validateEmail(data.email).length > 0}
+            helperText={
+              touched.email && validateEmail(data.email).length > 0
+                ? `Needs: ${validateEmail(data.email).join(", ")}`
+                : "We'll never share your email"
+            }
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 1,
                 "&:hover fieldset": {
                   borderColor: "primary.main",
                 },
+              },
+              "& .MuiFormHelperText-root": {
+                whiteSpace: "normal",
+                wordWrap: "break-word",
               },
             }}
           />
@@ -178,10 +220,19 @@ export default function RegisterForm({
             type={showPassword ? "text" : "password"}
             value={data.password}
             onChange={e => setData({ ...data, password: e.target.value })}
+            onBlur={() => setTouched({ ...touched, password: true })}
             fullWidth
             variant="outlined"
             size="medium"
-            error={!!errorMessage}
+            required
+            error={
+              touched.password && validatePassword(data.password).length > 0
+            }
+            helperText={
+              touched.password && validatePassword(data.password).length > 0
+                ? `Needs: ${validatePassword(data.password).join(", ")}`
+                : "Must include: 8+ characters, uppercase, lowercase, and number"
+            }
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -202,6 +253,10 @@ export default function RegisterForm({
                   borderColor: "primary.main",
                 },
               },
+              "& .MuiFormHelperText-root": {
+                whiteSpace: "normal",
+                wordWrap: "break-word",
+              },
             }}
           />
 
@@ -211,15 +266,19 @@ export default function RegisterForm({
             type="text"
             value={data.name}
             onChange={e => setData({ ...data, name: e.target.value })}
+            onBlur={() => setTouched({ ...touched, name: true })}
             fullWidth
             variant="outlined"
             size="medium"
-            error={!!errorMessage}
+            required
+            error={touched.name && validateName(data.name).length > 0}
             placeholder="How you'll appear to others"
             helperText={
-              data.email && data.name === generateDisplayName(data.email)
+              touched.name && validateName(data.name).length > 0
+                ? `Needs: ${validateName(data.name).join(", ")}`
+                : data.email && data.name === generateDisplayName(data.email)
                 ? "Auto-filled from your email (you can change this)"
-                : "How you'll appear to others"
+                : "2-50 characters: letters, numbers, spaces, _ and -"
             }
             sx={{
               "& .MuiOutlinedInput-root": {

@@ -23,11 +23,45 @@ export default async function handler(
   // Validate input
   const validation = validators.signup(req.body);
   if (!validation) {
+    // Format validation errors in a user-friendly way
+    const errors = validators.signup.errors || [];
+    const errorMessages: string[] = [];
+
+    errors.forEach((e: any) => {
+      const field =
+        e.instancePath.replace("/", "") || e.params?.missingProperty;
+      if (field === "password") {
+        if (e.keyword === "minLength")
+          errorMessages.push("Password must be at least 8 characters");
+        else if (e.keyword === "pattern")
+          errorMessages.push(
+            "Password must include uppercase, lowercase, and number"
+          );
+        else errorMessages.push(`Password: ${e.message}`);
+      } else if (field === "name") {
+        if (e.keyword === "minLength")
+          errorMessages.push("Display name must be at least 2 characters");
+        else if (e.keyword === "maxLength")
+          errorMessages.push("Display name must be 50 characters or less");
+        else if (e.keyword === "pattern")
+          errorMessages.push(
+            "Display name can only contain letters, numbers, spaces, _ and -"
+          );
+        else errorMessages.push(`Display name: ${e.message}`);
+      } else if (field === "email") {
+        if (e.keyword === "format")
+          errorMessages.push("Please enter a valid email address");
+        else errorMessages.push(`Email: ${e.message}`);
+      } else {
+        errorMessages.push(e.message);
+      }
+    });
+
     return res.status(400).json({
-      error: "Invalid input",
-      details: validators.signup.errors?.map(
-        e => `${(e as any).instancePath || (e as any).schemaPath}: ${e.message}`
-      ),
+      error:
+        errorMessages.length > 0
+          ? errorMessages.join(". ")
+          : "Invalid input. Please check your entries.",
     });
   }
 
