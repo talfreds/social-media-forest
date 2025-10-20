@@ -6,7 +6,8 @@ interface RateLimitConfig {
   message?: string;
 }
 
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+// Store request timestamps for sliding window
+const rateLimitStore = new Map<string, number[]>();
 
 export function rateLimit(config: RateLimitConfig) {
   return (req: NextApiRequest, res: NextApiResponse) => {
@@ -14,34 +15,41 @@ export function rateLimit(config: RateLimitConfig) {
     const now = Date.now();
     const windowStart = now - config.windowMs;
 
-    // Clean up expired entries
-    for (const [k, v] of rateLimitStore.entries()) {
-      if (v.resetTime < now) {
-        rateLimitStore.delete(k);
-      }
-    }
+    // Get or create request timestamps for this key
+    let requests = rateLimitStore.get(key) || [];
 
-    const current = rateLimitStore.get(key);
+    // Remove requests outside the current window
+    requests = requests.filter(timestamp => timestamp > windowStart);
 
-    if (!current || current.resetTime < now) {
-      // First request or window expired
-      rateLimitStore.set(key, {
-        count: 1,
-        resetTime: now + config.windowMs,
-      });
-      return true;
-    }
+    // Check if we've exceeded the limit
+    if (requests.length >= config.maxRequests) {
+      // Calculate time until the oldest request in the window expires
+      const oldestRequest = Math.min(...requests);
+      const timeUntilOldestExpires = Math.ceil(
+        (oldestRequest + config.windowMs - now) / 1000
+      );
 
-    if (current.count >= config.maxRequests) {
       res.status(429).json({
         error: config.message || "Too many requests",
-        retryAfter: Math.ceil((current.resetTime - now) / 1000),
+        retryAfter: timeUntilOldestExpires,
       });
       return false;
     }
 
-    // Increment counter
-    current.count++;
+    // Add current request timestamp
+    requests.push(now);
+    rateLimitStore.set(key, requests);
+
+    // Clean up old entries periodically
+    if (Math.random() < 0.01) {
+      // 1% chance to clean up
+      for (const [k, v] of rateLimitStore.entries()) {
+        if (v.length === 0 || v.every(timestamp => timestamp <= windowStart)) {
+          rateLimitStore.delete(k);
+        }
+      }
+    }
+
     return true;
   };
 }

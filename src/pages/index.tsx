@@ -18,6 +18,7 @@ import {
   CardContent,
   IconButton,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import RegisterForm from "../components/RegisterForm";
 import LoginForm from "../components/LoginForm";
 import ImageUpload from "../components/ImageUpload";
@@ -44,6 +45,7 @@ type Post = {
   location?: { lat: number; lon: number };
   forestId: string | null;
   imageUrl?: string | null;
+  createdAt: string;
 };
 
 type Props = {
@@ -51,7 +53,6 @@ type Props = {
   currentUser: { id: string; name: string | null; avatar?: string } | null;
   // nearbyPosts: Post[];
   allPosts: Post[];
-  darkMode: boolean;
   setDarkMode: (value: boolean) => void;
   // initialCity: string;
   // initialLat: number;
@@ -64,11 +65,12 @@ export default function Home({
   isLoggedIn,
   currentUser,
   allPosts,
-  darkMode,
   setDarkMode,
   currentForestId,
   currentForestName,
 }: Props) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const [newPost, setNewPost] = useState("");
   const [newPostImage, setNewPostImage] = useState<string | null>(null);
   const [userCity, setUserCity] = useState<string | null>(null);
@@ -144,6 +146,7 @@ export default function Home({
       comments: [],
       forestId: currentForestId,
       imageUrl: newPostImage,
+      createdAt: new Date().toISOString(),
     };
 
     // Update UI immediately
@@ -152,14 +155,14 @@ export default function Home({
     setNewPostImage(null);
 
     try {
+      // # todo - add optional location for prioritizing local
       const res = await fetch("/api/posts/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: tempPost.content,
-          location: null,
           forestId: currentForestId,
-          imageUrl: newPostImage,
+          ...(newPostImage && { imageUrl: newPostImage }),
         }),
       });
 
@@ -326,12 +329,12 @@ export default function Home({
         className="forest-background"
         sx={{
           minHeight: "100vh",
-          background: darkMode
+          background: isDark
             ? forestBackgrounds.deepWoods
             : forestBackgrounds.sunnyMeadow,
           backgroundAttachment: "fixed",
           position: "relative",
-          "&::before": darkMode
+          "&::before": isDark
             ? {
                 content: '""',
                 position: "absolute",
@@ -399,6 +402,7 @@ export default function Home({
                     isLoggedIn={isLoggedIn}
                     currentUserId={currentUser?.id}
                     imageUrl={post.imageUrl}
+                    createdAt={post.createdAt}
                     onReply={handleReplySubmit}
                     onEditComment={handleEditComment}
                     onDeleteComment={handleDeleteComment}
@@ -503,6 +507,8 @@ export default function Home({
                       sx={{
                         "& .MuiOutlinedInput-root": {
                           backgroundColor: "rgba(15, 26, 15, 0.8)",
+                          borderRadius: "12px",
+                          overflow: "hidden",
                           "& fieldset": {
                             borderColor: "#4A6741",
                             borderRadius: "12px",
@@ -528,7 +534,6 @@ export default function Home({
                       onImageUpload={url => setNewPostImage(url)}
                       onImageRemove={() => setNewPostImage(null)}
                       currentImage={newPostImage}
-                      darkMode={darkMode}
                     />
 
                     <Box sx={{ display: "flex", justifyContent: "center" }}>
@@ -632,12 +637,12 @@ export default function Home({
           <Typography
             variant="body2"
             sx={{
-              color: darkMode ? "#B8D4B8" : "#558B2F",
+              color: isDark ? "#B8D4B8" : "#558B2F",
               fontSize: { xs: "0.75rem", sm: "0.875rem" },
               fontWeight: 400,
               fontStyle: "italic",
               textAlign: "right",
-              textShadow: darkMode
+              textShadow: isDark
                 ? "1px 1px 3px rgba(0, 0, 0, 0.8)"
                 : "1px 1px 2px rgba(255, 255, 255, 0.8)",
               opacity: 0.8,
@@ -682,9 +687,9 @@ export const getServerSideProps: GetServerSideProps<
   const token = cookies.authToken;
   const decodedUser = token ? verifyToken(token) : null;
 
-  // Get forest ID from query params
-  const forestIdParam = context.query.forest as string | undefined;
-  const currentForestId = forestIdParam || null;
+  // Get forest name from query params
+  const forestNameParam = context.query.forest as string | undefined;
+  const currentForestName = forestNameParam || null;
 
   // Fetch current user details if logged in
   let currentUser = null;
@@ -696,14 +701,14 @@ export const getServerSideProps: GetServerSideProps<
     currentUser = userRecord;
   }
 
-  // Fetch forest name if a forest is selected
-  let currentForestName = null;
-  if (currentForestId) {
+  // Fetch forest ID if a forest is selected
+  let currentForestId = null;
+  if (currentForestName) {
     const forest = await prisma.forest.findUnique({
-      where: { id: currentForestId },
-      select: { name: true },
+      where: { name: currentForestName },
+      select: { id: true },
     });
-    currentForestName = forest?.name || null;
+    currentForestId = forest?.id || null;
   }
 
   // const ip =
@@ -793,7 +798,6 @@ export const getServerSideProps: GetServerSideProps<
       currentUser: currentUser ? JSON.parse(JSON.stringify(currentUser)) : null,
       // nearbyPosts: JSON.parse(JSON.stringify(nearbyPosts || [])),
       allPosts: JSON.parse(JSON.stringify(allPosts)),
-      darkMode: false,
       // initialCity,
       // initialLat,
       // initialLon,

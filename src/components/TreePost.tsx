@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Card,
@@ -19,6 +19,7 @@ import {
 import { Send, Forest, Nature, Spa, Share, Close } from "@mui/icons-material";
 import NestedComment from "./NestedComment";
 import Link from "next/link";
+import { HydrationSafeDate } from "../lib/date-utils";
 
 interface Comment {
   id: string;
@@ -32,11 +33,12 @@ interface Comment {
 interface TreePostProps {
   id: string;
   content: string;
-  author: { id: string; name: string | null };
+  author: { id: string; name: string | null; avatar?: string | null };
   comments: Comment[];
   isLoggedIn: boolean;
   currentUserId?: string;
   imageUrl?: string | null;
+  createdAt: string;
   onReply: (
     postId: string,
     parentId: string | null,
@@ -49,6 +51,7 @@ interface TreePostProps {
   setReplyInputs: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   initialCollapsed?: boolean;
   onOpenRegister?: () => void;
+  disableTreeCollapse?: boolean; // New prop to disable tree collapse functionality
 }
 
 const TreePost: React.FC<TreePostProps> = ({
@@ -59,6 +62,7 @@ const TreePost: React.FC<TreePostProps> = ({
   isLoggedIn,
   currentUserId,
   imageUrl,
+  createdAt,
   onReply,
   onEditComment,
   onDeleteComment,
@@ -66,10 +70,27 @@ const TreePost: React.FC<TreePostProps> = ({
   setReplyInputs,
   initialCollapsed = false,
   onOpenRegister,
+  disableTreeCollapse = false,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [isTreeOnly, setIsTreeOnly] = React.useState(initialCollapsed);
+  const [isMobile, setIsMobile] = React.useState(false);
+  const [isTreeOnly, setIsTreeOnly] = React.useState(
+    disableTreeCollapse ? false : initialCollapsed
+  );
+  const [mounted, setMounted] = React.useState(false);
+
+  // Handle media query hydration safely
+  React.useEffect(() => {
+    setMounted(true);
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < theme.breakpoints.values.sm);
+    };
+
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, [theme.breakpoints.values.sm]);
   const [shareAnchorEl, setShareAnchorEl] = React.useState<null | HTMLElement>(
     null
   );
@@ -100,7 +121,7 @@ const TreePost: React.FC<TreePostProps> = ({
         }
         return;
       }
-      setReplyInputs((prev) => ({ ...prev, [id]: "" }));
+      setReplyInputs(prev => ({ ...prev, [id]: "" }));
       onReply(id, null, replyContent);
     }
   };
@@ -146,15 +167,18 @@ const TreePost: React.FC<TreePostProps> = ({
 
   const style = treeStyles[treeType];
 
+  // Prevent hydration mismatch by using consistent layout until mounted
+  const safeIsMobile = mounted ? isMobile : false;
+
   return (
     <Box
       sx={{
         position: "relative",
         display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        alignItems: isMobile ? "center" : "flex-start",
+        flexDirection: safeIsMobile ? "column" : "row",
+        alignItems: safeIsMobile ? "center" : "flex-start",
         mb: 6,
-        mx: isMobile ? 1 : 2,
+        mx: safeIsMobile ? 1 : 2,
         gap: 2,
         transition: "all 0.3s ease-in-out",
         overflow: "hidden",
@@ -168,11 +192,13 @@ const TreePost: React.FC<TreePostProps> = ({
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            minWidth: isMobile ? "auto" : "100px",
-            order: isMobile ? 1 : 1,
-            cursor: "pointer",
+            minWidth: safeIsMobile ? "auto" : "100px",
+            order: safeIsMobile ? 1 : 1,
+            cursor: disableTreeCollapse ? "default" : "pointer",
           }}
-          onClick={() => setIsTreeOnly(!isTreeOnly)}
+          onClick={
+            disableTreeCollapse ? undefined : () => setIsTreeOnly(!isTreeOnly)
+          }
         >
           <Box
             sx={{
@@ -302,7 +328,7 @@ const TreePost: React.FC<TreePostProps> = ({
       {/* Image Section - Between Tree and Content */}
       <Box
         sx={{
-          width: isMobile ? "100%" : "225px", // 50% larger (150px * 1.5)
+          width: safeIsMobile ? "100%" : "225px", // 50% larger (150px * 1.5)
           height: isTreeOnly ? "90px" : "300px", // 50% larger (200px * 1.5)
           background: imageUrl
             ? "transparent"
@@ -325,7 +351,7 @@ const TreePost: React.FC<TreePostProps> = ({
           backdropFilter: "blur(8px)",
           boxShadow: `0 4px 16px ${theme.palette.primary.main}22`,
           cursor: "pointer",
-          order: isMobile ? 2 : 2,
+          order: safeIsMobile ? 2 : 2,
           flexShrink: 0,
           transition: "all 0.3s ease-in-out",
           overflow: "hidden",
@@ -368,7 +394,7 @@ const TreePost: React.FC<TreePostProps> = ({
       {/* Post Content Card - Right Side */}
       <Card
         sx={{
-          minWidth: isMobile ? "280px" : "auto",
+          minWidth: safeIsMobile ? "280px" : "auto",
           flex: 1,
           position: "relative",
           zIndex: 2,
@@ -383,7 +409,7 @@ const TreePost: React.FC<TreePostProps> = ({
             theme.palette.mode === "dark"
               ? `0 8px 32px rgba(0, 0, 0, 0.3), 0 0 16px ${theme.palette.primary.main}33`
               : `0 4px 16px rgba(0, 0, 0, 0.1), 0 0 8px ${theme.palette.primary.main}22`,
-          order: isMobile ? 3 : 3,
+          order: safeIsMobile ? 3 : 3,
           display: "flex",
           flexDirection: "column",
           transition: "all 0.3s ease-in-out",
@@ -396,17 +422,22 @@ const TreePost: React.FC<TreePostProps> = ({
             display: "flex",
             flexDirection: "column",
             transition: "all 0.3s ease-in-out",
-            cursor: isTreeOnly ? "pointer" : "default",
-            "&:hover": isTreeOnly
-              ? {
-                  backgroundColor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(76, 175, 80, 0.05)"
-                      : "rgba(76, 175, 80, 0.02)",
-                }
-              : {},
+            cursor: isTreeOnly && !disableTreeCollapse ? "pointer" : "default",
+            "&:hover":
+              isTreeOnly && !disableTreeCollapse
+                ? {
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(76, 175, 80, 0.05)"
+                        : "rgba(76, 175, 80, 0.02)",
+                  }
+                : {},
           }}
-          onClick={isTreeOnly ? () => setIsTreeOnly(false) : undefined}
+          onClick={
+            isTreeOnly && !disableTreeCollapse
+              ? () => setIsTreeOnly(false)
+              : undefined
+          }
         >
           {/* Minimal Author Info - Top Right */}
           <Box
@@ -450,30 +481,32 @@ const TreePost: React.FC<TreePostProps> = ({
 
             {/* Actions: collapse/expand and link */}
             <Box>
-              <IconButton
-                size="small"
-                onClick={() => setIsTreeOnly(!isTreeOnly)}
-                sx={{
-                  color: theme.palette.text.secondary,
-                  mr: 1,
-                  "&:hover": {
-                    color: theme.palette.primary.main,
-                    backgroundColor:
-                      theme.palette.mode === "dark"
-                        ? "rgba(76, 175, 80, 0.1)"
-                        : "rgba(76, 175, 80, 0.08)",
-                  },
-                }}
-                title={isTreeOnly ? "Expand tree" : "Collapse tree"}
-              >
-                {/* reuse Spa icon rotated as a collapse glyph */}
-                <Spa
+              {!disableTreeCollapse && (
+                <IconButton
+                  size="small"
+                  onClick={() => setIsTreeOnly(!isTreeOnly)}
                   sx={{
-                    fontSize: "small",
-                    transform: isTreeOnly ? "none" : "rotate(-45deg)",
+                    color: theme.palette.text.secondary,
+                    mr: 1,
+                    "&:hover": {
+                      color: theme.palette.primary.main,
+                      backgroundColor:
+                        theme.palette.mode === "dark"
+                          ? "rgba(76, 175, 80, 0.1)"
+                          : "rgba(76, 175, 80, 0.08)",
+                    },
                   }}
-                />
-              </IconButton>
+                  title={isTreeOnly ? "Expand tree" : "Collapse tree"}
+                >
+                  {/* reuse Spa icon rotated as a collapse glyph */}
+                  <Spa
+                    sx={{
+                      fontSize: "small",
+                      transform: isTreeOnly ? "none" : "rotate(-45deg)",
+                    }}
+                  />
+                </IconButton>
+              )}
               <Tooltip title="Share">
                 <IconButton
                   size="small"
@@ -554,11 +587,7 @@ const TreePost: React.FC<TreePostProps> = ({
                   pt: 1,
                 }}
               >
-                {new Date().toLocaleDateString()} •{" "}
-                {new Date().toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                <HydrationSafeDate dateString={createdAt} format="datetime" />
               </Typography>
             )}
           </Box>
@@ -582,7 +611,7 @@ const TreePost: React.FC<TreePostProps> = ({
               </Typography>
 
               <Box sx={{ p: 0 }}>
-                {comments.map((comment) => (
+                {comments.map(comment => (
                   <NestedComment
                     key={comment.id}
                     comment={comment}
@@ -616,9 +645,9 @@ const TreePost: React.FC<TreePostProps> = ({
               >
                 <TextField
                   value={replyInputs[id] || ""}
-                  onChange={(e) => {
+                  onChange={e => {
                     const value = e.target.value;
-                    setReplyInputs((prev) => ({ ...prev, [id]: value }));
+                    setReplyInputs(prev => ({ ...prev, [id]: value }));
                   }}
                   placeholder="Add a branch to this tree..."
                   fullWidth
@@ -630,6 +659,8 @@ const TreePost: React.FC<TreePostProps> = ({
                         theme.palette.mode === "dark"
                           ? "rgba(15, 26, 15, 0.8)"
                           : "rgba(255, 255, 255, 0.9)",
+                      borderRadius: "20px",
+                      overflow: "hidden",
                       "& fieldset": {
                         borderColor: theme.palette.divider,
                         borderRadius: "20px",

@@ -23,10 +23,12 @@ import {
   Delete,
   Share,
 } from "@mui/icons-material";
+import { HydrationSafeDate } from "../lib/date-utils";
 import Link from "next/link";
 
 interface Author {
   name: string | null;
+  avatar?: string | null;
 }
 
 interface NestedCommentData {
@@ -190,8 +192,12 @@ const NestedComment: React.FC<NestedCommentProps> = ({
                 ml: 1,
               }}
             >
-              {comment.createdAt &&
-                new Date(comment.createdAt).toLocaleDateString()}
+              {comment.createdAt && (
+                <HydrationSafeDate
+                  dateString={comment.createdAt}
+                  format="date"
+                />
+              )}
               {comment.updatedAt &&
                 comment.updatedAt !== comment.createdAt &&
                 " (edited)"}
@@ -203,7 +209,7 @@ const NestedComment: React.FC<NestedCommentProps> = ({
             <Box sx={{ mt: 1 }}>
               <TextField
                 value={editText}
-                onChange={(e) => setEditText(e.target.value)}
+                onChange={e => setEditText(e.target.value)}
                 fullWidth
                 multiline
                 size="small"
@@ -360,7 +366,7 @@ const NestedComment: React.FC<NestedCommentProps> = ({
               <>
                 <IconButton
                   size="small"
-                  onClick={(e) => setShareAnchorEl(e.currentTarget)}
+                  onClick={e => setShareAnchorEl(e.currentTarget)}
                   sx={{
                     color: theme.palette.text.secondary,
                     padding: 0.25,
@@ -386,7 +392,7 @@ const NestedComment: React.FC<NestedCommentProps> = ({
               <>
                 <IconButton
                   size="small"
-                  onClick={(e) => setMenuAnchorEl(e.currentTarget)}
+                  onClick={e => setMenuAnchorEl(e.currentTarget)}
                   sx={{
                     color: theme.palette.text.secondary,
                     padding: 0.25,
@@ -449,7 +455,7 @@ const NestedComment: React.FC<NestedCommentProps> = ({
             >
               <TextField
                 value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
+                onChange={e => setReplyText(e.target.value)}
                 placeholder="Add a branch to this comment..."
                 fullWidth
                 variant="outlined"
@@ -511,7 +517,7 @@ const NestedComment: React.FC<NestedCommentProps> = ({
           {comment.replies && comment.replies.length > 0 && (
             <Collapse in={!isCollapsed}>
               <Box sx={{ mt: 1 }}>
-                {comment.replies.map((reply) => (
+                {comment.replies.map(reply => (
                   <NestedComment
                     key={reply.id}
                     comment={reply}

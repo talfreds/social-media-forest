@@ -28,10 +28,12 @@ import {
   HourglassEmpty,
   ArrowBack,
 } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
 import { parse } from "cookie";
 import { verifyToken } from "../lib/auth";
 import prisma from "../lib/prisma";
 import MenuBar from "../components/MenuBar";
+import { HydrationSafeDate } from "../lib/date-utils";
 
 interface Friend {
   friendshipId: string;
@@ -64,7 +66,6 @@ interface Props {
     id: string;
     name: string | null;
   };
-  darkMode: boolean;
 }
 
 export default function FriendsPage({
@@ -72,8 +73,9 @@ export default function FriendsPage({
   initialSentRequests,
   initialReceivedRequests,
   currentUser,
-  darkMode,
 }: Props) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const [tabValue, setTabValue] = useState(0);
   const [searchName, setSearchName] = useState("");
   const [friends, setFriends] = useState(initialFriends);
@@ -160,6 +162,7 @@ export default function FriendsPage({
 
       <MenuBar
         isLoggedIn={true}
+        currentUser={currentUser}
         currentForestId={null}
         currentForestName={null}
       />
@@ -167,38 +170,17 @@ export default function FriendsPage({
       <Box
         sx={{
           minHeight: "100vh",
-          background: darkMode
-            ? "linear-gradient(135deg, #0F1A0F 0%, #1A2D1A 50%, #0F1A0F 100%)"
-            : "linear-gradient(135deg, #F1F8E9 0%, #C5E1A5 50%, #F1F8E9 100%)",
-          pt: 10, // Add padding for MenuBar
+          background: theme.palette.background.default,
         }}
       >
         <Container maxWidth="lg" sx={{ py: 4 }}>
-          {/* Back Button */}
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <Button
-              startIcon={<ArrowBack />}
-              sx={{
-                mb: 3,
-                color: darkMode ? "#E8F5E8" : "#1B5E20",
-                "&:hover": {
-                  bgcolor: darkMode
-                    ? "rgba(74, 103, 65, 0.1)"
-                    : "rgba(76, 175, 80, 0.1)",
-                },
-              }}
-            >
-              Back to Forest
-            </Button>
-          </Link>
-
           {/* Header */}
           <Box sx={{ mb: 4, textAlign: "center" }}>
             <Typography
               variant="h3"
               sx={{
                 fontWeight: 700,
-                color: darkMode ? "#E8F5E8" : "#1B5E20",
+                color: theme.palette.text.primary,
                 mb: 1,
               }}
             >
@@ -207,7 +189,7 @@ export default function FriendsPage({
             </Typography>
             <Typography
               variant="body1"
-              sx={{ color: darkMode ? "#B8D4B8" : "#558B2F" }}
+              sx={{ color: theme.palette.text.secondary }}
             >
               Grow your forest community
             </Typography>
@@ -230,13 +212,13 @@ export default function FriendsPage({
           )}
 
           {/* Add Friend */}
-          <Card sx={{ mb: 3, bgcolor: darkMode ? "#1A2D1A" : "#FFFFFF" }}>
+          <Card sx={{ mb: 3, bgcolor: isDark ? "#1A2D1A" : "#FFFFFF" }}>
             <CardContent>
               <Typography
                 variant="h6"
                 sx={{
                   mb: 2,
-                  color: darkMode ? "#E8F5E8" : "#1B5E20",
+                  color: isDark ? "#E8F5E8" : "#1B5E20",
                   fontWeight: 600,
                 }}
               >
@@ -254,7 +236,7 @@ export default function FriendsPage({
                   }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
-                      color: darkMode ? "#E8F5E8" : "#1B5E20",
+                      color: isDark ? "#E8F5E8" : "#1B5E20",
                     },
                   }}
                 />
@@ -275,7 +257,7 @@ export default function FriendsPage({
           </Card>
 
           {/* Tabs */}
-          <Card sx={{ bgcolor: darkMode ? "#1A2D1A" : "#FFFFFF" }}>
+          <Card sx={{ bgcolor: isDark ? "#1A2D1A" : "#FFFFFF" }}>
             <Tabs
               value={tabValue}
               onChange={(_, newValue) => setTabValue(newValue)}
@@ -283,10 +265,10 @@ export default function FriendsPage({
                 borderBottom: 1,
                 borderColor: "divider",
                 "& .MuiTab-root": {
-                  color: darkMode ? "#B8D4B8" : "#558B2F",
+                  color: isDark ? "#B8D4B8" : "#558B2F",
                 },
                 "& .Mui-selected": {
-                  color: darkMode ? "#E8F5E8" : "#1B5E20",
+                  color: isDark ? "#E8F5E8" : "#1B5E20",
                 },
               }}
             >
@@ -316,20 +298,20 @@ export default function FriendsPage({
                       <People
                         sx={{
                           fontSize: 64,
-                          color: darkMode ? "#4A6741" : "#C5E1A5",
+                          color: isDark ? "#4A6741" : "#C5E1A5",
                           mb: 2,
                         }}
                       />
                       <Typography
                         variant="h6"
-                        sx={{ color: darkMode ? "#B8D4B8" : "#558B2F" }}
+                        sx={{ color: isDark ? "#B8D4B8" : "#558B2F" }}
                       >
                         No friends yet
                       </Typography>
                       <Typography
                         variant="body2"
                         sx={{
-                          color: darkMode ? "#B8D4B8" : "#558B2F",
+                          color: isDark ? "#B8D4B8" : "#558B2F",
                           mt: 1,
                         }}
                       >
@@ -344,9 +326,9 @@ export default function FriendsPage({
                         <Card
                           key={friendship.friendshipId}
                           sx={{
-                            bgcolor: darkMode ? "#2E4A2E" : "#F1F8E9",
+                            bgcolor: isDark ? "#2E4A2E" : "#F1F8E9",
                             "&:hover": {
-                              bgcolor: darkMode ? "#3A5A3A" : "#E8F5E8",
+                              bgcolor: isDark ? "#3A5A3A" : "#E8F5E8",
                             },
                           }}
                         >
@@ -382,7 +364,7 @@ export default function FriendsPage({
                                   <Typography
                                     variant="h6"
                                     sx={{
-                                      color: darkMode ? "#E8F5E8" : "#1B5E20",
+                                      color: isDark ? "#E8F5E8" : "#1B5E20",
                                       "&:hover": {
                                         textDecoration: "underline",
                                       },
@@ -394,13 +376,13 @@ export default function FriendsPage({
                                 <Typography
                                   variant="caption"
                                   sx={{
-                                    color: darkMode ? "#B8D4B8" : "#558B2F",
+                                    color: isDark ? "#B8D4B8" : "#558B2F",
                                   }}
                                 >
                                   Friends since{" "}
-                                  {new Date(
-                                    friendship.since
-                                  ).toLocaleDateString()}
+                                  <HydrationSafeDate
+                                    dateString={friendship.since}
+                                  />
                                 </Typography>
                               </Box>
                             </Box>
@@ -425,13 +407,13 @@ export default function FriendsPage({
                       <HourglassEmpty
                         sx={{
                           fontSize: 64,
-                          color: darkMode ? "#4A6741" : "#C5E1A5",
+                          color: isDark ? "#4A6741" : "#C5E1A5",
                           mb: 2,
                         }}
                       />
                       <Typography
                         variant="h6"
-                        sx={{ color: darkMode ? "#B8D4B8" : "#558B2F" }}
+                        sx={{ color: isDark ? "#B8D4B8" : "#558B2F" }}
                       >
                         No pending requests
                       </Typography>
@@ -444,7 +426,7 @@ export default function FriendsPage({
                         <Card
                           key={request.requestId}
                           sx={{
-                            bgcolor: darkMode ? "#2E4A2E" : "#F1F8E9",
+                            bgcolor: isDark ? "#2E4A2E" : "#F1F8E9",
                           }}
                         >
                           <CardContent
@@ -468,7 +450,7 @@ export default function FriendsPage({
                                 <Typography
                                   variant="body1"
                                   sx={{
-                                    color: darkMode ? "#E8F5E8" : "#1B5E20",
+                                    color: isDark ? "#E8F5E8" : "#1B5E20",
                                   }}
                                 >
                                   {request.from?.name || "Anonymous"}
@@ -476,13 +458,14 @@ export default function FriendsPage({
                                 <Typography
                                   variant="caption"
                                   sx={{
-                                    color: darkMode ? "#B8D4B8" : "#558B2F",
+                                    color: isDark ? "#B8D4B8" : "#558B2F",
                                   }}
                                 >
-                                  {request.receivedAt &&
-                                    new Date(
-                                      request.receivedAt
-                                    ).toLocaleDateString()}
+                                  {request.receivedAt && (
+                                    <HydrationSafeDate
+                                      dateString={request.receivedAt}
+                                    />
+                                  )}
                                 </Typography>
                               </Box>
                             </Box>
@@ -528,13 +511,13 @@ export default function FriendsPage({
                       <Search
                         sx={{
                           fontSize: 64,
-                          color: darkMode ? "#4A6741" : "#C5E1A5",
+                          color: isDark ? "#4A6741" : "#C5E1A5",
                           mb: 2,
                         }}
                       />
                       <Typography
                         variant="h6"
-                        sx={{ color: darkMode ? "#B8D4B8" : "#558B2F" }}
+                        sx={{ color: isDark ? "#B8D4B8" : "#558B2F" }}
                       >
                         No sent requests
                       </Typography>
@@ -547,7 +530,7 @@ export default function FriendsPage({
                         <Card
                           key={request.requestId}
                           sx={{
-                            bgcolor: darkMode ? "#2E4A2E" : "#F1F8E9",
+                            bgcolor: isDark ? "#2E4A2E" : "#F1F8E9",
                           }}
                         >
                           <CardContent
@@ -571,7 +554,7 @@ export default function FriendsPage({
                                 <Typography
                                   variant="body1"
                                   sx={{
-                                    color: darkMode ? "#E8F5E8" : "#1B5E20",
+                                    color: isDark ? "#E8F5E8" : "#1B5E20",
                                   }}
                                 >
                                   {request.to?.name || "Anonymous"}
@@ -579,14 +562,15 @@ export default function FriendsPage({
                                 <Typography
                                   variant="caption"
                                   sx={{
-                                    color: darkMode ? "#B8D4B8" : "#558B2F",
+                                    color: isDark ? "#B8D4B8" : "#558B2F",
                                   }}
                                 >
                                   Sent{" "}
-                                  {request.sentAt &&
-                                    new Date(
-                                      request.sentAt
-                                    ).toLocaleDateString()}
+                                  {request.sentAt && (
+                                    <HydrationSafeDate
+                                      dateString={request.sentAt}
+                                    />
+                                  )}
                                 </Typography>
                               </Box>
                             </Box>
@@ -594,7 +578,7 @@ export default function FriendsPage({
                               label="Pending"
                               size="small"
                               sx={{
-                                bgcolor: darkMode ? "#8B6914" : "#FFA726",
+                                bgcolor: isDark ? "#8B6914" : "#FFA726",
                                 color: "#FFF",
                               }}
                             />
@@ -648,7 +632,6 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
         initialSentRequests: data.sentRequests || [],
         initialReceivedRequests: data.receivedRequests || [],
         currentUser: currentUser || { id: decoded.userId, name: null },
-        darkMode: cookies.darkMode === "true",
       },
     };
   } catch (error) {
@@ -659,7 +642,6 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
         initialSentRequests: [],
         initialReceivedRequests: [],
         currentUser: { id: decoded.userId, name: null },
-        darkMode: cookies.darkMode === "true",
       },
     };
   }

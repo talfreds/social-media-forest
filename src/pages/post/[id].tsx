@@ -8,6 +8,7 @@ import {
   Breadcrumbs,
   Link as MuiLink,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Home, Forest } from "@mui/icons-material";
 import MenuBar from "../../components/MenuBar";
 import TreePost from "../../components/TreePost";
@@ -39,7 +40,6 @@ type Props = {
   post: Post;
   isLoggedIn: boolean;
   currentUser: { id: string; name: string | null; avatar?: string } | null;
-  darkMode: boolean;
   setDarkMode: (value: boolean) => void;
 };
 
@@ -47,9 +47,10 @@ export default function PostPage({
   post,
   isLoggedIn,
   currentUser,
-  darkMode,
   setDarkMode,
 }: Props) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const [replyInputs, setReplyInputs] = useState<{ [key: string]: string }>({});
   const [currentPost, setCurrentPost] = useState<Post>(post);
 
@@ -97,7 +98,7 @@ export default function PostPage({
 
       if (response.ok) {
         // Remove the comment from the UI optimistically
-        setCurrentPost((prevPost) => ({
+        setCurrentPost(prevPost => ({
           ...prevPost,
           comments: removeCommentFromTree(prevPost.comments, commentId),
         }));
@@ -118,8 +119,8 @@ export default function PostPage({
     commentId: string
   ): Comment[] => {
     return comments
-      .filter((comment) => comment.id !== commentId)
-      .map((comment) => ({
+      .filter(comment => comment.id !== commentId)
+      .map(comment => ({
         ...comment,
         replies: comment.replies
           ? removeCommentFromTree(comment.replies, commentId)
@@ -141,12 +142,12 @@ export default function PostPage({
         className="forest-background"
         sx={{
           minHeight: "100vh",
-          background: darkMode
+          background: isDark
             ? forestBackgrounds.deepWoods
             : forestBackgrounds.sunnyMeadow,
           backgroundAttachment: "fixed",
           position: "relative",
-          "&::before": darkMode
+          "&::before": isDark
             ? {
                 content: '""',
                 position: "absolute",
@@ -178,54 +179,53 @@ export default function PostPage({
           <Breadcrumbs
             sx={{
               mb: 3,
-              color: darkMode ? "#B8D4B8" : "#558B2F",
+              color: isDark ? "#B8D4B8" : "#558B2F",
               "& .MuiBreadcrumbs-separator": {
-                color: darkMode ? "#B8D4B8" : "#558B2F",
+                color: isDark ? "#B8D4B8" : "#558B2F",
               },
             }}
           >
-            <Link href="/" style={{ textDecoration: "none" }}>
+            <MuiLink
+              component={Link}
+              href="/"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                color: isDark ? "#B8D4B8" : "#558B2F",
+                cursor: "pointer",
+                textDecoration: "none",
+                "&:hover": {
+                  color: isDark ? "#E8F5E8" : "#2E7D32",
+                },
+              }}
+            >
+              <Home fontSize="small" />
+              Home
+            </MuiLink>
+            {post.forest && (
               <MuiLink
+                component={Link}
+                href={`/?forest=${encodeURIComponent(post.forest.name)}`}
                 sx={{
                   display: "flex",
                   alignItems: "center",
                   gap: 0.5,
-                  color: darkMode ? "#B8D4B8" : "#558B2F",
+                  color: isDark ? "#B8D4B8" : "#558B2F",
                   cursor: "pointer",
+                  textDecoration: "none",
                   "&:hover": {
-                    color: darkMode ? "#E8F5E8" : "#2E7D32",
+                    color: isDark ? "#E8F5E8" : "#2E7D32",
                   },
                 }}
               >
-                <Home fontSize="small" />
-                Home
+                <Forest fontSize="small" />
+                {post.forest.name}
               </MuiLink>
-            </Link>
-            {post.forest && (
-              <Link
-                href={`/?forest=${post.forest.id}`}
-                style={{ textDecoration: "none" }}
-              >
-                <MuiLink
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.5,
-                    color: darkMode ? "#B8D4B8" : "#558B2F",
-                    cursor: "pointer",
-                    "&:hover": {
-                      color: darkMode ? "#E8F5E8" : "#2E7D32",
-                    },
-                  }}
-                >
-                  <Forest fontSize="small" />
-                  {post.forest.name}
-                </MuiLink>
-              </Link>
             )}
             <Typography
               sx={{
-                color: darkMode ? "#E8F5E8" : "#1B5E20",
+                color: isDark ? "#E8F5E8" : "#1B5E20",
                 fontWeight: 600,
               }}
             >
@@ -242,12 +242,14 @@ export default function PostPage({
             isLoggedIn={isLoggedIn}
             currentUserId={currentUser?.id}
             imageUrl={currentPost.imageUrl}
+            createdAt={currentPost.createdAt}
             onReply={handleReplySubmit}
             onEditComment={handleEditComment}
             onDeleteComment={handleDeleteComment}
             replyInputs={replyInputs}
             setReplyInputs={setReplyInputs}
             initialCollapsed={false}
+            disableTreeCollapse={true}
           />
         </Container>
 
@@ -264,12 +266,12 @@ export default function PostPage({
           <Typography
             variant="body2"
             sx={{
-              color: darkMode ? "#B8D4B8" : "#558B2F",
+              color: isDark ? "#B8D4B8" : "#558B2F",
               fontSize: { xs: "0.75rem", sm: "0.875rem" },
               fontWeight: 400,
               fontStyle: "italic",
               textAlign: "right",
-              textShadow: darkMode
+              textShadow: isDark
                 ? "1px 1px 3px rgba(0, 0, 0, 0.8)"
                 : "1px 1px 2px rgba(255, 255, 255, 0.8)",
               opacity: 0.8,
@@ -286,7 +288,7 @@ export default function PostPage({
 
 export const getServerSideProps: GetServerSideProps<
   Omit<Props, "setDarkMode">
-> = async (context) => {
+> = async context => {
   const postId = context.params?.id as string;
 
   if (!postId || typeof postId !== "string" || postId.trim().length === 0) {
@@ -317,7 +319,7 @@ export const getServerSideProps: GetServerSideProps<
         createdAt: true,
         imageUrl: true,
         author: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, avatar: true },
         },
         forest: {
           select: { id: true, name: true },
@@ -332,7 +334,7 @@ export const getServerSideProps: GetServerSideProps<
             parentId: true,
             createdAt: true,
             author: {
-              select: { id: true, name: true },
+              select: { id: true, name: true, avatar: true },
             },
           },
           orderBy: { createdAt: "asc" },
@@ -350,7 +352,7 @@ export const getServerSideProps: GetServerSideProps<
       const rootComments: Comment[] = [];
 
       // First pass: create all comment objects
-      comments.forEach((comment) => {
+      comments.forEach(comment => {
         commentMap.set(comment.id, {
           id: comment.id,
           content: comment.content,
@@ -361,7 +363,7 @@ export const getServerSideProps: GetServerSideProps<
       });
 
       // Second pass: build the tree
-      comments.forEach((comment) => {
+      comments.forEach(comment => {
         const commentNode = commentMap.get(comment.id)!;
         if (comment.parentId === null) {
           rootComments.push(commentNode);
@@ -391,7 +393,7 @@ export const getServerSideProps: GetServerSideProps<
         currentUser: currentUser
           ? JSON.parse(JSON.stringify(currentUser))
           : null,
-        darkMode: false,
+        isDark: false,
       },
     };
   } catch (error) {

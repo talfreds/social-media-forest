@@ -17,10 +17,17 @@ export default function LogoutButton() {
   return (
     <Button
       variant="outlined"
-      color="secondary"
       onClick={handleLogout}
       size="medium"
-      sx={{ minWidth: { xs: "80px", sm: "100px" } }} // Match button sizes
+      sx={{
+        minWidth: { xs: "80px", sm: "100px" },
+        borderColor: "#E8F5E8",
+        color: "#E8F5E8",
+        "&:hover": {
+          borderColor: "#E8F5E8",
+          backgroundColor: "rgba(232, 245, 232, 0.1)",
+        },
+      }}
     >
       Logout
     </Button>

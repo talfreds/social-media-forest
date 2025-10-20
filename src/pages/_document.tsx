@@ -4,6 +4,10 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/forest-icon.svg" type="image/svg+xml" />
+
         {/* Font preconnect and stylesheet */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

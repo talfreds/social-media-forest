@@ -33,10 +33,18 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# OCI secrets and local config
+scripts/init/oci-config.local.env
+scripts/init/oci-config.ashburn.env
+scripts/init/oci-config.frankfurt.env
+scripts/init/oci-config.london.env
+scripts/init/oci-config.phoenix.env
+scripts/init/instance-details.txt
+scripts/init/github-secrets.txt
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-scripts/init/*

@@ -12,11 +12,13 @@ import {
   Chip,
   Button,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Forest, Nature, Comment as CommentIcon } from "@mui/icons-material";
 import MenuBar from "../../components/MenuBar";
 import { forestBackgrounds } from "../../lib/theme";
 import prisma from "../../lib/prisma";
 import Link from "next/link";
+import { HydrationSafeDate } from "../../lib/date-utils";
 
 type Props = {
   user: {
@@ -48,7 +50,6 @@ type Props = {
     _count: { posts: number };
   }>;
   isLoggedIn: boolean;
-  darkMode: boolean;
   setDarkMode: (value: boolean) => void;
 };
 
@@ -58,9 +59,10 @@ export default function UserProfile({
   comments,
   forests,
   isLoggedIn,
-  darkMode,
   setDarkMode,
 }: Props) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   return (
     <>
       <MenuBar
@@ -73,7 +75,9 @@ export default function UserProfile({
         className="forest-background"
         sx={{
           minHeight: "100vh",
-          background: forestBackgrounds.deepWoods,
+          background: isDark
+            ? forestBackgrounds.deepWoods
+            : forestBackgrounds.sunnyMeadow,
           backgroundAttachment: "fixed",
           position: "relative",
         }}
@@ -216,17 +220,17 @@ export default function UserProfile({
                     </Box>
                     <Box sx={{ display: "flex", gap: 1 }}>
                       <Button
-                        variant={!darkMode ? "contained" : "outlined"}
+                        variant={!isDark ? "contained" : "outlined"}
                         size="small"
                         onClick={() => setDarkMode(false)}
                         sx={{
                           minWidth: "60px",
                           textTransform: "none",
-                          bgcolor: !darkMode ? "#4A6741" : "transparent",
-                          color: !darkMode ? "#E8F5E8" : "#B8D4B8",
+                          bgcolor: !isDark ? "#4A6741" : "transparent",
+                          color: !isDark ? "#E8F5E8" : "#B8D4B8",
                           borderColor: "#4A6741",
                           "&:hover": {
-                            bgcolor: !darkMode
+                            bgcolor: !isDark
                               ? "#6B8B5A"
                               : "rgba(74, 103, 65, 0.2)",
                           },
@@ -235,17 +239,17 @@ export default function UserProfile({
                         Light
                       </Button>
                       <Button
-                        variant={darkMode ? "contained" : "outlined"}
+                        variant={isDark ? "contained" : "outlined"}
                         size="small"
                         onClick={() => setDarkMode(true)}
                         sx={{
                           minWidth: "60px",
                           textTransform: "none",
-                          bgcolor: darkMode ? "#4A6741" : "transparent",
-                          color: darkMode ? "#E8F5E8" : "#B8D4B8",
+                          bgcolor: isDark ? "#4A6741" : "transparent",
+                          color: isDark ? "#E8F5E8" : "#B8D4B8",
                           borderColor: "#4A6741",
                           "&:hover": {
-                            bgcolor: darkMode
+                            bgcolor: isDark
                               ? "#6B8B5A"
                               : "rgba(74, 103, 65, 0.2)",
                           },
@@ -349,36 +353,47 @@ export default function UserProfile({
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {forests.map(forest => (
-                    <Box
+                    <Link
                       key={forest.id}
-                      sx={{
-                        p: 2,
-                        bgcolor: "rgba(15, 26, 15, 0.6)",
-                        borderRadius: "8px",
-                        border: "1px solid #2E4A2E",
-                      }}
+                      href={`/?forest=${encodeURIComponent(forest.name)}`}
+                      style={{ textDecoration: "none" }}
                     >
-                      <Typography
-                        variant="h6"
-                        sx={{ color: "#66BB6A", fontWeight: 600 }}
+                      <Box
+                        sx={{
+                          p: 2,
+                          bgcolor: "rgba(15, 26, 15, 0.6)",
+                          borderRadius: "8px",
+                          border: "1px solid #2E4A2E",
+                          cursor: "pointer",
+                          transition: "all 0.3s",
+                          "&:hover": {
+                            bgcolor: "rgba(74, 103, 65, 0.2)",
+                            borderColor: "#4A6741",
+                          },
+                        }}
                       >
-                        {forest.name}
-                      </Typography>
-                      {forest.description && (
                         <Typography
-                          variant="body2"
-                          sx={{ color: "#B8D4B8", mt: 0.5 }}
+                          variant="h6"
+                          sx={{ color: "#66BB6A", fontWeight: 600 }}
                         >
-                          {forest.description}
+                          {forest.name}
                         </Typography>
-                      )}
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "#90A4AE", mt: 1, display: "block" }}
-                      >
-                        {forest._count.posts} trees planted
-                      </Typography>
-                    </Box>
+                        {forest.description && (
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "#B8D4B8", mt: 0.5 }}
+                          >
+                            {forest.description}
+                          </Typography>
+                        )}
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "#90A4AE", mt: 1, display: "block" }}
+                        >
+                          {forest._count.posts} trees planted
+                        </Typography>
+                      </Box>
+                    </Link>
                   ))}
                 </Box>
               </CardContent>
@@ -449,7 +464,7 @@ export default function UserProfile({
                             variant="caption"
                             sx={{ color: "#90A4AE" }}
                           >
-                            {new Date(post.createdAt).toLocaleDateString()}
+                            <HydrationSafeDate dateString={post.createdAt} />
                           </Typography>
                           {post.forest && (
                             <Chip
@@ -546,7 +561,7 @@ export default function UserProfile({
                             variant="caption"
                             sx={{ color: "#90A4AE" }}
                           >
-                            {new Date(comment.createdAt).toLocaleDateString()}
+                            <HydrationSafeDate dateString={comment.createdAt} />
                           </Typography>
                           {comment.post.forest && (
                             <Chip
@@ -660,7 +675,6 @@ export const getServerSideProps: GetServerSideProps<
         comments: JSON.parse(JSON.stringify(comments)),
         forests: JSON.parse(JSON.stringify(forests)),
         isLoggedIn: !!currentUser,
-        darkMode: false,
       },
     };
   } catch (error) {

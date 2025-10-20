@@ -178,6 +178,9 @@ const forestDarkTheme = createTheme({
           },
           "& .MuiInputLabel-root": {
             color: "#B8D4B8",
+            "&.Mui-focused": {
+              color: "#66BB6A",
+            },
           },
         },
       },
@@ -324,6 +327,9 @@ const lightTheme = createTheme({
           },
           "& .MuiInputLabel-root": {
             color: "#558B2F",
+            "&.Mui-focused": {
+              color: "#2E7D32",
+            },
           },
         },
       },

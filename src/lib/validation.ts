@@ -26,6 +26,10 @@ export const validationSchemas = {
         maxLength: 50,
         pattern: "^[a-zA-Z0-9_\\-\\s]+$", // Alphanumeric, underscore, dash, spaces
       },
+      avatar: {
+        type: "string",
+        enum: ["cat", "dog", "fish", "lizard", "monkey"], // Valid avatar options
+      },
     },
     additionalProperties: false,
   },
@@ -95,7 +99,7 @@ export const validationSchemas = {
         maxLength: 100,
       },
       parentId: {
-        type: "string",
+        type: ["string", "null"],
         minLength: 1,
         maxLength: 100,
       },
@@ -116,8 +120,8 @@ export const validationSchemas = {
       name: {
         type: "string",
         minLength: 2,
-        maxLength: 100,
-        pattern: "^[a-zA-Z0-9\\s\\-_.,!?()]+$", // Allow common punctuation
+        maxLength: 25,
+        pattern: "^[a-zA-Z0-9]+$", // Only letters and numbers
       },
       description: {
         type: "string",

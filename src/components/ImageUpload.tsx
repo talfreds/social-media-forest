@@ -7,6 +7,7 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { PhotoCamera, Close } from "@mui/icons-material";
 
 interface ImageUploadProps {
@@ -14,7 +15,6 @@ interface ImageUploadProps {
   onImageRemove: () => void;
   currentImage?: string | null;
   maxSizeMB?: number;
-  darkMode?: boolean;
 }
 
 export default function ImageUpload({
@@ -22,8 +22,9 @@ export default function ImageUpload({
   onImageRemove,
   currentImage,
   maxSizeMB = 2,
-  darkMode = true,
 }: ImageUploadProps) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +61,7 @@ export default function ImageUpload({
     try {
       // Read file as base64
       const reader = new FileReader();
-      reader.onload = async (event) => {
+      reader.onload = async event => {
         const base64Data = event.target?.result as string;
 
         try {
@@ -141,7 +142,8 @@ export default function ImageUpload({
             maxWidth: "300px",
             borderRadius: 2,
             overflow: "hidden",
-            border: `2px solid ${darkMode ? "#4A6741" : "#2E7D32"}`,
+            border: `2px solid ${isDark ? "#4A6741" : "#2E7D32"}`,
+            mx: "auto", // Center horizontally
           }}
         >
           <img
@@ -179,11 +181,11 @@ export default function ImageUpload({
           onClick={handleButtonClick}
           disabled={uploading}
           sx={{
-            color: darkMode ? "#B8D4B8" : "#2E7D32",
-            borderColor: darkMode ? "#4A6741" : "#2E7D32",
+            color: isDark ? "#B8D4B8" : "#2E7D32",
+            borderColor: isDark ? "#4A6741" : "#2E7D32",
             "&:hover": {
-              borderColor: darkMode ? "#B8D4B8" : "#1B5E20",
-              backgroundColor: darkMode
+              borderColor: isDark ? "#B8D4B8" : "#1B5E20",
+              backgroundColor: isDark
                 ? "rgba(184, 212, 184, 0.1)"
                 : "rgba(46, 125, 50, 0.1)",
             },

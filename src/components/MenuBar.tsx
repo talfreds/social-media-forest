@@ -44,6 +44,7 @@ interface ForestData {
   name: string;
   description: string | null;
   isPrivate: boolean;
+  createdAt: string;
   _count: { posts: number };
 }
 
@@ -56,6 +57,7 @@ export default function MenuBar({
 }: MenuBarProps) {
   const router = useRouter();
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [formType, setFormType] = useState<"register" | "login" | null>(null);
   const [showLoginError, setShowLoginError] = useState(false);
@@ -72,16 +74,36 @@ export default function MenuBar({
   const [newForestDesc, setNewForestDesc] = useState("");
   const [newForestPrivate, setNewForestPrivate] = useState(false);
   const [forestError, setForestError] = useState("");
+
+  // Helper function to validate forest name
+  const validateForestName = (name: string) => {
+    if (!name.trim()) return "";
+    if (!/^[a-zA-Z0-9]+$/.test(name.trim())) {
+      return "Only letters and numbers allowed";
+    }
+    if (name.trim().length > 25) {
+      return "Must be 25 characters or less";
+    }
+    return "";
+  };
   const [loadingForests, setLoadingForests] = useState(false);
 
-  // Fetch forests on mount for the forest list display
   useEffect(() => {
     const fetchForests = async () => {
       try {
         const res = await fetch("/api/forests");
         if (res.ok) {
           const data = await res.json();
-          setForests(data);
+
+          const sortedForests = data.sort((a: ForestData, b: ForestData) => {
+            if (b._count.posts !== a._count.posts) {
+              return b._count.posts - a._count.posts;
+            }
+            return (
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            );
+          });
+          setForests(sortedForests);
         }
       } catch (error) {
         console.error("Error fetching forests:", error);
@@ -110,7 +132,16 @@ export default function MenuBar({
       const res = await fetch("/api/forests");
       if (res.ok) {
         const data = await res.json();
-        setForests(data);
+
+        const sortedForests = data.sort((a: ForestData, b: ForestData) => {
+          if (b._count.posts !== a._count.posts) {
+            return b._count.posts - a._count.posts;
+          }
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        });
+        setForests(sortedForests);
       } else {
         console.error("Failed to fetch forests:", res.status);
       }
@@ -131,7 +162,13 @@ export default function MenuBar({
     if (forestId === null) {
       router.push("/");
     } else {
-      router.push(`/?forest=${forestId}`);
+      // Find the forest name from the forests list
+      const selectedForest = forests.find(f => f.id === forestId);
+      if (selectedForest) {
+        router.push(`/?forest=${encodeURIComponent(selectedForest.name)}`);
+      } else {
+        router.push("/");
+      }
     }
     setChangeForestOpen(false);
   };
@@ -166,6 +203,17 @@ export default function MenuBar({
       return;
     }
 
+    // Validate forest name format
+    if (!/^[a-zA-Z0-9]+$/.test(newForestName.trim())) {
+      setForestError("Forest name can only contain letters and numbers");
+      return;
+    }
+
+    if (newForestName.trim().length > 25) {
+      setForestError("Forest name must be 25 characters or less");
+      return;
+    }
+
     try {
       const res = await fetch("/api/forests/create", {
         method: "POST",
@@ -180,7 +228,7 @@ export default function MenuBar({
       if (res.ok) {
         const newForest = await res.json();
         handleCloseCreateForest();
-        router.push(`/?forest=${newForest.id}`);
+        router.push(`/?forest=${encodeURIComponent(newForest.name)}`);
       } else {
         const error = await res.json();
         setForestError(error.error || "Failed to create forest");
@@ -212,13 +260,21 @@ export default function MenuBar({
             overflow: "hidden",
           }}
         >
-          <Image src="/monkey.svg" alt="Monkey" width={32} height={32} />
+          <Image
+            src="/monkey.svg"
+            alt="Monkey"
+            width={32}
+            height={32}
+            unoptimized
+          />
 
           {/* Current Forest - Clickable */}
           <Button
             onClick={() => {
-              if (currentForestId) {
-                router.push(`/?forest=${currentForestId}`);
+              if (currentForestName) {
+                router.push(
+                  `/?forest=${encodeURIComponent(currentForestName)}`
+                );
               } else {
                 router.push("/");
               }
@@ -256,7 +312,9 @@ export default function MenuBar({
               .map(forest => (
                 <Button
                   key={forest.id}
-                  onClick={() => router.push(`/?forest=${forest.id}`)}
+                  onClick={() =>
+                    router.push(`/?forest=${encodeURIComponent(forest.name)}`)
+                  }
                   sx={{
                     color: "rgba(232, 245, 232, 0.6)",
                     fontSize: "0.8rem",
@@ -329,24 +387,7 @@ export default function MenuBar({
 
         {/* Right Section - User Actions */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {isLoggedIn && (
-            <Button
-              variant="outlined"
-              href="/friends"
-              sx={{
-                minWidth: "auto",
-                display: { xs: "none", sm: "flex" },
-                borderColor: theme.palette.primary.contrastText,
-                color: theme.palette.primary.contrastText,
-                "&:hover": {
-                  borderColor: theme.palette.primary.contrastText,
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                },
-              }}
-            >
-              Friends
-            </Button>
-          )}
+          {/* User Profile Section */}
           {isLoggedIn && currentUser && (
             <Button
               variant="outlined"
@@ -376,6 +417,26 @@ export default function MenuBar({
                 <Forest fontSize="small" />
               )}
               {currentUser.name || "User"}
+            </Button>
+          )}
+
+          {/* Social Section */}
+          {isLoggedIn && (
+            <Button
+              variant="outlined"
+              href="/friends"
+              sx={{
+                minWidth: "auto",
+                display: { xs: "none", sm: "flex" },
+                borderColor: theme.palette.primary.contrastText,
+                color: theme.palette.primary.contrastText,
+                "&:hover": {
+                  borderColor: theme.palette.primary.contrastText,
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                },
+              }}
+            >
+              Friends
             </Button>
           )}
           {!isLoggedIn ? (
@@ -478,7 +539,9 @@ export default function MenuBar({
                   <ListItemText
                     primary="🌍 All Forests"
                     secondary="View posts from all forests"
-                    primaryTypographyProps={{ fontWeight: 600 }}
+                    slotProps={{
+                      primary: { sx: { fontWeight: 600 } },
+                    }}
                   />
                 </ListItemButton>
 
@@ -510,9 +573,26 @@ export default function MenuBar({
                         </Box>
                       }
                       secondary={
-                        forest.description || `${forest._count.posts} posts`
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 0.5,
+                          }}
+                        >
+                          {forest.description && (
+                            <span style={{ fontSize: "0.875rem" }}>
+                              {forest.description}
+                            </span>
+                          )}
+                          <span style={{ fontSize: "0.75rem", opacity: 0.8 }}>
+                            {forest._count.posts} posts
+                          </span>
+                        </Box>
                       }
-                      primaryTypographyProps={{ fontWeight: 600 }}
+                      slotProps={{
+                        primary: { sx: { fontWeight: 600 } },
+                      }}
                     />
                   </ListItemButton>
                 ))}
@@ -548,11 +628,18 @@ export default function MenuBar({
             <TextField
               label="Forest Name"
               value={newForestName}
-              onChange={e => setNewForestName(e.target.value)}
+              onChange={e => {
+                setNewForestName(e.target.value);
+                setForestError(""); // Clear error when user types
+              }}
               fullWidth
-              sx={{ mb: 2 }}
-              error={!!forestError}
-              placeholder="e.g. Mystic Woods, Vancouver, New York Travel"
+              sx={{ mb: 2, mt: 2 }}
+              error={!!forestError || !!validateForestName(newForestName)}
+              helperText={
+                validateForestName(newForestName) ||
+                "Only letters and numbers, max 25 characters"
+              }
+              placeholder="e.g. MysticWoods, Vancouver, NewYorkTravel"
             />
             <TextField
               label="Description (optional)"

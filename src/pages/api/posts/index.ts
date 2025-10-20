@@ -16,7 +16,7 @@ export default async function handler(
   try {
     const posts = await prisma.post.findMany({
       include: {
-        author: { select: { name: true } },
+        author: { select: { id: true, name: true, avatar: true } },
         comments: {
           where: { deletedAt: null },
           include: {
