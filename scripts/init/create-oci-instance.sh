@@ -118,8 +118,14 @@ log_step "Creating OCI instance..."
 # OCI expects the key in format: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC..."
 # We have a PEM format key, so we need to convert it to SSH format
 # Extract the key content and convert to SSH format
-KEY_CONTENT=$(cat "$OCI_SSH_KEY_PATH" | grep -v "BEGIN" | grep -v "END" | tr -d '\n' | tr -d '\r' | tr -d ' ')
-SSH_KEY_CONTENT="ssh-rsa $KEY_CONTENT"
+if [[ "$OCI_SSH_KEY_PATH" == *.pem ]]; then
+    # PEM format key - convert to SSH format
+    KEY_CONTENT=$(cat "$OCI_SSH_KEY_PATH" | grep -v "BEGIN" | grep -v "END" | tr -d '\n' | tr -d '\r' | tr -d ' ')
+    SSH_KEY_CONTENT="ssh-rsa $KEY_CONTENT"
+else
+    # Already in SSH format (.pub file)
+    SSH_KEY_CONTENT=$(cat "$OCI_SSH_KEY_PATH")
+fi
 
 # Build the OCI command based on shape type
 if [[ "$OCI_SHAPE" == *"Flex"* ]]; then
@@ -162,12 +168,33 @@ log_step "Waiting for instance to be running..."
 
 # Wait for instance to reach RUNNING state
 log_info "This may take 2-3 minutes..."
-oci compute instance wait \
-    --instance-id "$INSTANCE_OCID" \
-    --wait-for-state RUNNING \
-    --max-wait-seconds 300
+MAX_WAIT_SECONDS=300
+WAIT_COUNT=0
+WAIT_INTERVAL=10
 
-log_info "Instance is now running"
+while [ $WAIT_COUNT -lt $MAX_WAIT_SECONDS ]; do
+    INSTANCE_STATE=$(oci compute instance get \
+        --instance-id "$INSTANCE_OCID" \
+        --query 'data."lifecycle-state"' \
+        --raw-output)
+    
+    if [ "$INSTANCE_STATE" = "RUNNING" ]; then
+        log_info "Instance is now running"
+        break
+    elif [ "$INSTANCE_STATE" = "TERMINATED" ] || [ "$INSTANCE_STATE" = "TERMINATING" ]; then
+        log_error "Instance failed to start. State: $INSTANCE_STATE"
+        exit 1
+    else
+        log_info "Instance state: $INSTANCE_STATE (waiting...)"
+        sleep $WAIT_INTERVAL
+        WAIT_COUNT=$((WAIT_COUNT + WAIT_INTERVAL))
+    fi
+done
+
+if [ $WAIT_COUNT -ge $MAX_WAIT_SECONDS ]; then
+    log_error "Timeout waiting for instance to reach RUNNING state"
+    exit 1
+fi
 
 ###############################################################################
 # 4. Get public IP

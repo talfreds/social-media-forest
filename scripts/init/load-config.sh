@@ -41,18 +41,16 @@ load_config() {
     # Check if local config exists, otherwise use default
     if [ -f "$LOCAL_CONFIG_FILE" ]; then
         log_info "Using local configuration: $LOCAL_CONFIG_FILE"
-        # Handle Windows line endings by using a temporary file
-        TEMP_CONFIG=$(mktemp)
-        sed 's/\r$//' "$LOCAL_CONFIG_FILE" > "$TEMP_CONFIG"
-        source "$TEMP_CONFIG"
-        rm -f "$TEMP_CONFIG"
+        # Handle Windows line endings and source directly
+        sed 's/\r$//' "$LOCAL_CONFIG_FILE" > /tmp/oci-config-clean.env
+        source /tmp/oci-config-clean.env
+        rm -f /tmp/oci-config-clean.env
     elif [ -f "$CONFIG_FILE" ]; then
         log_info "Using default configuration: $CONFIG_FILE"
-        # Handle Windows line endings by using a temporary file
-        TEMP_CONFIG=$(mktemp)
-        sed 's/\r$//' "$CONFIG_FILE" > "$TEMP_CONFIG"
-        source "$TEMP_CONFIG"
-        rm -f "$TEMP_CONFIG"
+        # Handle Windows line endings and source directly
+        sed 's/\r$//' "$CONFIG_FILE" > /tmp/oci-config-clean.env
+        source /tmp/oci-config-clean.env
+        rm -f /tmp/oci-config-clean.env
     else
         log_warn "No configuration file found!"
         log_warn "Please create $LOCAL_CONFIG_FILE or ensure $CONFIG_FILE exists"
@@ -127,7 +125,10 @@ main() {
     fi
 }
 
-# Run main function if script is executed directly
+# Run main function if script is executed directly or sourced
 if [ "${BASH_SOURCE[0]}" == "${0}" ]; then
+    main "$@"
+else
+    # Script is being sourced, run main function
     main "$@"
 fi
