@@ -14,7 +14,7 @@ export default async function handler(
 
   setSecurityHeaders(res);
 
-  requireAuth(req, res, async () => {
+  await requireAuth(req, res, async () => {
     try {
       const validation = validators.friendRequest(req.body);
       if (!validation) {

@@ -662,7 +662,10 @@ export default function Home({
         fullWidth
       >
         <DialogContent sx={{ p: 0 }}>
-          <RegisterForm isVisible={formType === "register"} />
+          <RegisterForm
+            isVisible={formType === "register"}
+            onSwitchToLogin={() => setFormType("login")}
+          />
         </DialogContent>
       </Dialog>
 
@@ -673,7 +676,10 @@ export default function Home({
         fullWidth
       >
         <DialogContent sx={{ p: 0 }}>
-          <LoginForm isVisible={formType === "login"} />
+          <LoginForm
+            isVisible={formType === "login"}
+            onSwitchToRegister={() => setFormType("register")}
+          />
         </DialogContent>
       </Dialog>
     </>

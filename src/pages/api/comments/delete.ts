@@ -24,7 +24,7 @@ export default async function handler(
   if (!deleteRateLimit(req, res)) {
     return;
   }
-  requireAuth(req, res, async () => {
+  await requireAuth(req, res, async () => {
     try {
       const { commentId } = req.query;
       const userId = (req as any).user.userId;

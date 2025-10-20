@@ -2,10 +2,8 @@ import { createMocks } from "node-mocks-http";
 import sendHandler from "../../pages/api/friends/send";
 import respondHandler from "../../pages/api/friends/respond";
 import listHandler from "../../pages/api/friends/list";
-import { PrismaClient } from "@prisma/client";
 import { generateToken } from "../../lib/auth";
-
-const prisma = new PrismaClient();
+import { prisma, setupTestDatabase, cleanupTestDatabase } from "../test-utils";
 
 describe("Friend System API", () => {
   let user1Id: string;
@@ -14,6 +12,9 @@ describe("Friend System API", () => {
   let user2Token: string;
 
   beforeAll(async () => {
+    // Connect to test database and clean any existing data
+    await setupTestDatabase();
+
     // Create test users
     const user1 = await prisma.user.create({
       data: {
@@ -37,12 +38,7 @@ describe("Friend System API", () => {
   });
 
   afterAll(async () => {
-    await prisma.friend.deleteMany();
-    await prisma.user.deleteMany({
-      where: {
-        email: { in: ["friend1@test.com", "friend2@test.com"] },
-      },
-    });
+    await cleanupTestDatabase();
     await prisma.$disconnect();
   });
 
@@ -107,13 +103,20 @@ describe("Friend System API", () => {
     let requestId: string;
 
     beforeAll(async () => {
+      // Find the friend request created by the send test
       const request = await prisma.friend.findFirst({
         where: {
           initiatorId: user1Id,
           receiverId: user2Id,
+          status: "PENDING",
         },
       });
-      requestId = request!.id;
+
+      if (!request) {
+        throw new Error("Friend request not found - send test must run first");
+      }
+
+      requestId = request.id;
     });
 
     it("should accept a friend request", async () => {
@@ -157,6 +160,7 @@ describe("Friend System API", () => {
 
   describe("/api/friends/list", () => {
     it("should list friends for user", async () => {
+      // The friend request should already be accepted from the previous tests
       const { req, res } = createMocks({
         method: "GET",
         headers: {

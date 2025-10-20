@@ -33,13 +33,6 @@ export default async function handler(
 
   const { email, password, name, avatar } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
-  console.log(
-    `🚀🤗 ~ handler ~ email, password, name, avatar:`,
-    email,
-    password,
-    name,
-    avatar
-  );
 
   try {
     const user = await prisma.user.create({
@@ -59,7 +52,14 @@ export default async function handler(
   } catch (error) {
     console.error("Signup error:", error);
     if (error instanceof Error && error.message.includes("Unique constraint")) {
-      res.status(400).json({ error: "Email or display name already exists" });
+      // Check which field caused the constraint violation
+      if (error.message.includes("email")) {
+        res.status(400).json({ error: "Email already exists" });
+      } else if (error.message.includes("name")) {
+        res.status(400).json({ error: "Display name already taken" });
+      } else {
+        res.status(400).json({ error: "Email or display name already exists" });
+      }
     } else {
       handleApiError(error, res);
     }

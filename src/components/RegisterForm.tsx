@@ -34,7 +34,13 @@ const avatarOptions = [
   { value: "monkey", label: "Monkey", icon: Forest },
 ];
 
-export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
+export default function RegisterForm({
+  isVisible,
+  onSwitchToLogin,
+}: {
+  isVisible: boolean;
+  onSwitchToLogin?: () => void;
+}) {
   const [data, setData] = useState({
     email: "",
     password: "",
@@ -44,6 +50,31 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Generate suggested display name from email
+  const generateDisplayName = (email: string) => {
+    if (!email) return "";
+    const username = email.split("@")[0];
+    // Clean up the username and make it display-name friendly
+    return username
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .replace(/^[0-9]/, "") // Remove leading numbers
+      .substring(0, 20) // Limit length
+      .toLowerCase();
+  };
+
+  // Handle email change and auto-fill display name
+  const handleEmailChange = (email: string) => {
+    setData(prev => ({
+      ...prev,
+      email,
+      // Auto-fill display name if it's empty or was previously auto-generated
+      name:
+        prev.name === "" || prev.name === generateDisplayName(prev.email)
+          ? generateDisplayName(email)
+          : prev.name,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,12 +139,13 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
           {errorMessage && (
             <Typography
               variant="body2"
-              color="error"
               sx={{
                 bgcolor: "error.light",
+                color: "error.contrastText",
                 p: 1,
                 borderRadius: 1,
                 textAlign: "center",
+                fontWeight: 500,
               }}
             >
               {errorMessage}
@@ -125,7 +157,7 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
             label="Email"
             type="email"
             value={data.email}
-            onChange={e => setData({ ...data, email: e.target.value })}
+            onChange={e => handleEmailChange(e.target.value)}
             fullWidth
             variant="outlined"
             size="medium"
@@ -184,12 +216,22 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
             size="medium"
             error={!!errorMessage}
             placeholder="How you'll appear to others"
+            helperText={
+              data.email && data.name === generateDisplayName(data.email)
+                ? "Auto-filled from your email (you can change this)"
+                : "How you'll appear to others"
+            }
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 1,
                 "&:hover fieldset": {
                   borderColor: "primary.main",
                 },
+              },
+              "& .MuiFormHelperText-root": {
+                whiteSpace: "normal",
+                wordWrap: "break-word",
+                lineHeight: 1.3,
               },
             }}
           />
@@ -275,6 +317,33 @@ export default function RegisterForm({ isVisible }: { isVisible: boolean }) {
           >
             {isLoading ? "Signing Up..." : "Sign Up"}
           </Button>
+
+          {/* Switch to Login */}
+          {onSwitchToLogin && (
+            <Box sx={{ textAlign: "center", mt: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: "text.secondary", mb: 1 }}
+              >
+                Already have an account?
+              </Typography>
+              <Button
+                variant="text"
+                color="primary"
+                onClick={onSwitchToLogin}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 500,
+                  "&:hover": {
+                    bgcolor: "primary.light",
+                    color: "primary.contrastText",
+                  },
+                }}
+              >
+                Sign In Instead
+              </Button>
+            </Box>
+          )}
         </Box>
       </Paper>
     </Fade>

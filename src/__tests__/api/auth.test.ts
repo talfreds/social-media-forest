@@ -1,18 +1,18 @@
 import { createMocks } from "node-mocks-http";
 import signupHandler from "../../pages/api/auth/signup";
 import loginHandler from "../../pages/api/auth/login";
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
+import { prisma, setupTestDatabase, cleanupTestDatabase } from "../test-utils";
 
 describe("/api/auth/signup", () => {
   beforeAll(async () => {
-    // Clean up test database
-    await prisma.user.deleteMany();
+    // Connect to test database and clean any existing data
+    await prisma.$connect();
+    await cleanupTestDatabase();
   });
 
   afterAll(async () => {
+    await cleanupTestDatabase();
     await prisma.$disconnect();
   });
 
@@ -21,14 +21,14 @@ describe("/api/auth/signup", () => {
       method: "POST",
       body: {
         email: "test@example.com",
-        password: "password123",
+        password: "Password123",
         name: "TestUser123",
       },
     });
 
     await signupHandler(req, res);
 
-    expect(res._getStatusCode()).toBe(200);
+    expect(res._getStatusCode()).toBe(201);
     const data = JSON.parse(res._getData());
     expect(data.user.email).toBe("test@example.com");
     expect(data.user.name).toBe("TestUser123");
@@ -36,12 +36,24 @@ describe("/api/auth/signup", () => {
   });
 
   it("should reject duplicate display name", async () => {
+    // First create a user
+    const { req: req1, res: res1 } = createMocks({
+      method: "POST",
+      body: {
+        email: "dupname1@example.com",
+        password: "Password123",
+        name: "DupNameUser",
+      },
+    });
+    await signupHandler(req1, res1);
+
+    // Then try to create another user with same name
     const { req, res } = createMocks({
       method: "POST",
       body: {
-        email: "test2@example.com",
-        password: "password123",
-        name: "TestUser123", // Duplicate name
+        email: "dupname2@example.com",
+        password: "Password123",
+        name: "DupNameUser", // Duplicate name
       },
     });
 
@@ -53,12 +65,24 @@ describe("/api/auth/signup", () => {
   });
 
   it("should reject duplicate email", async () => {
+    // First create a user
+    const { req: req1, res: res1 } = createMocks({
+      method: "POST",
+      body: {
+        email: "dupemail@example.com",
+        password: "Password123",
+        name: "DupEmailUser1",
+      },
+    });
+    await signupHandler(req1, res1);
+
+    // Then try to create another user with same email
     const { req, res } = createMocks({
       method: "POST",
       body: {
-        email: "test@example.com", // Duplicate email
-        password: "password123",
-        name: "DifferentUser",
+        email: "dupemail@example.com", // Duplicate email
+        password: "Password123",
+        name: "DupEmailUser2",
       },
     });
 
@@ -66,14 +90,15 @@ describe("/api/auth/signup", () => {
 
     expect(res._getStatusCode()).toBe(400);
     const data = JSON.parse(res._getData());
-    expect(data.error).toContain("email");
+    expect(data.error).toContain("Email already exists");
   });
 });
 
 describe("/api/auth/login", () => {
   beforeAll(async () => {
-    // Create test user
-    const hashedPassword = await bcrypt.hash("testpassword", 10);
+    // Don't clean database - signup tests need their users
+    // Just create test user for login tests
+    const hashedPassword = await bcrypt.hash("TestPassword123", 10);
     await prisma.user.upsert({
       where: { email: "login@example.com" },
       update: {},
@@ -86,7 +111,7 @@ describe("/api/auth/login", () => {
   });
 
   afterAll(async () => {
-    await prisma.user.deleteMany({ where: { email: "login@example.com" } });
+    await cleanupTestDatabase();
     await prisma.$disconnect();
   });
 
@@ -95,7 +120,7 @@ describe("/api/auth/login", () => {
       method: "POST",
       body: {
         email: "login@example.com",
-        password: "testpassword",
+        password: "TestPassword123",
       },
     });
 
@@ -112,7 +137,7 @@ describe("/api/auth/login", () => {
       method: "POST",
       body: {
         email: "login@example.com",
-        password: "wrongpassword",
+        password: "WrongPassword123",
       },
     });
 

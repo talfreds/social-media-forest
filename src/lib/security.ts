@@ -82,10 +82,10 @@ export function validateRequest<T>(
 }
 
 // Authentication middleware
-export function requireAuth(
+export async function requireAuth(
   req: NextApiRequest,
   res: NextApiResponse,
-  next: () => void
+  next: () => void | Promise<void>
 ) {
   try {
     const token =
@@ -104,7 +104,15 @@ export function requireAuth(
 
     // Add user info to request for use in handlers
     (req as any).user = decoded;
-    next();
+
+    // Handle both sync and async next functions
+    const result = next();
+    if (result instanceof Promise) {
+      return await result.catch(error => {
+        console.error("Error in auth middleware:", error);
+        handleApiError(error, res);
+      });
+    }
   } catch (error) {
     handleApiError(error, res);
   }
@@ -166,51 +174,6 @@ export function logRequest(
   next();
 }
 
-// SQL injection prevention (basic)
-export function preventSqlInjection(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  next: () => void
-) {
-  const sqlPatterns = [
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi,
-    /(--|\/\*|\*\/|xp_|sp_)/gi,
-    /(\b(OR|AND)\s+\d+\s*=\s*\d+)/gi,
-  ];
-
-  const checkString = (str: string) => {
-    return sqlPatterns.some(pattern => pattern.test(str));
-  };
-
-  try {
-    if (req.body && typeof req.body === "object") {
-      for (const [key, value] of Object.entries(req.body)) {
-        if (typeof value === "string" && checkString(value)) {
-          return res.status(400).json({
-            error: "Invalid input detected",
-            code: "INVALID_INPUT",
-          });
-        }
-      }
-    }
-
-    if (req.query && typeof req.query === "object") {
-      for (const [key, value] of Object.entries(req.query)) {
-        if (typeof value === "string" && checkString(value)) {
-          return res.status(400).json({
-            error: "Invalid input detected",
-            code: "INVALID_INPUT",
-          });
-        }
-      }
-    }
-
-    next();
-  } catch (error) {
-    handleApiError(error, res);
-  }
-}
-
 // Content length validation
 export function validateContentLength(
   req: NextApiRequest,
@@ -267,21 +230,11 @@ export function applySecurityMiddleware(
 // Predefined middleware combinations
 export const securityMiddleware = {
   // For authentication endpoints
-  auth: [
-    applySecurityMiddleware,
-    validateContentLength,
-    preventSqlInjection,
-    sanitizeInput,
-  ],
+  auth: [applySecurityMiddleware, validateContentLength, sanitizeInput],
 
   // For content creation endpoints
-  content: [
-    applySecurityMiddleware,
-    validateContentLength,
-    preventSqlInjection,
-    sanitizeInput,
-  ],
+  content: [applySecurityMiddleware, validateContentLength, sanitizeInput],
 
   // For public endpoints
-  public: [applySecurityMiddleware, validateContentLength, preventSqlInjection],
+  public: [applySecurityMiddleware, validateContentLength],
 };

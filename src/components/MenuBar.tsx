@@ -478,8 +478,18 @@ export default function MenuBar({
                 <MenuItem
                   sx={{ p: 0, "&:hover": { backgroundColor: "transparent" } }}
                 >
-                  {formType === "register" && <RegisterForm isVisible={true} />}
-                  {formType === "login" && <LoginForm isVisible={true} />}
+                  {formType === "register" && (
+                    <RegisterForm
+                      isVisible={true}
+                      onSwitchToLogin={() => setFormType("login")}
+                    />
+                  )}
+                  {formType === "login" && (
+                    <LoginForm
+                      isVisible={true}
+                      onSwitchToRegister={() => setFormType("register")}
+                    />
+                  )}
                 </MenuItem>
               </Menu>
             </>

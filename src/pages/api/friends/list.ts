@@ -13,7 +13,7 @@ export default async function handler(
 
   setSecurityHeaders(res);
 
-  requireAuth(req, res, async () => {
+  await requireAuth(req, res, async () => {
     try {
       const userId = (req as any).user.userId;
       // Get all accepted friendships

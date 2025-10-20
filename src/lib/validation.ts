@@ -69,13 +69,13 @@ export const validationSchemas = {
         additionalProperties: false,
       },
       forestId: {
-        type: "string",
+        type: ["string", "null"],
         minLength: 1,
         maxLength: 100,
       },
       imageUrl: {
         type: "string",
-        maxLength: 10000, // Base64 images can be large
+        maxLength: 500000, // ~375KB images max (base64 encoded)
         pattern: "^data:image\\/(jpeg|png|gif|webp);base64,", // Validate base64 image format
       },
     },
@@ -105,7 +105,7 @@ export const validationSchemas = {
       },
       imageUrl: {
         type: "string",
-        maxLength: 10000,
+        maxLength: 500000, // ~375KB images max (base64 encoded) - consider file upload for larger images
         pattern: "^data:image\\/(jpeg|png|gif|webp);base64,",
       },
     },

@@ -28,9 +28,13 @@ export function handleApiError(error: unknown, res: NextApiResponse) {
     });
   }
 
+  const isProduction = process.env.NODE_ENV === "production";
+
   if (error instanceof Error) {
+    logError(error, "API_HANDLER");
+
     return res.status(500).json({
-      error: "Internal server error",
+      error: isProduction ? "Internal server error" : error.message,
       code: "INTERNAL_ERROR",
     });
   }

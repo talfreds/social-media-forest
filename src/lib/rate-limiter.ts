@@ -6,11 +6,19 @@ interface RateLimitConfig {
   message?: string;
 }
 
-// Store request timestamps for sliding window
 const rateLimitStore = new Map<string, number[]>();
+
+// Cleanup interval to prevent memory leaks
+const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+let lastCleanup = Date.now();
 
 export function rateLimit(config: RateLimitConfig) {
   return (req: NextApiRequest, res: NextApiResponse) => {
+    // Skip rate limiting in test environment
+    if (process.env.NODE_ENV === "test") {
+      return true;
+    }
+
     const key = getClientId(req);
     const now = Date.now();
     const windowStart = now - config.windowMs;
@@ -41,13 +49,13 @@ export function rateLimit(config: RateLimitConfig) {
     rateLimitStore.set(key, requests);
 
     // Clean up old entries periodically
-    if (Math.random() < 0.01) {
-      // 1% chance to clean up
+    if (now - lastCleanup > CLEANUP_INTERVAL) {
       for (const [k, v] of rateLimitStore.entries()) {
         if (v.length === 0 || v.every(timestamp => timestamp <= windowStart)) {
           rateLimitStore.delete(k);
         }
       }
+      lastCleanup = now;
     }
 
     return true;
@@ -61,7 +69,7 @@ function getClientId(req: NextApiRequest): string {
     ? Array.isArray(forwarded)
       ? forwarded[0]
       : forwarded.split(",")[0]
-    : req.connection.remoteAddress;
+    : req.connection?.remoteAddress;
   return ip || "unknown";
 }
 

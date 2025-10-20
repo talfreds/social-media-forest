@@ -12,7 +12,13 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
-export default function LoginForm({ isVisible }: { isVisible: boolean }) {
+export default function LoginForm({
+  isVisible,
+  onSwitchToRegister,
+}: {
+  isVisible: boolean;
+  onSwitchToRegister?: () => void;
+}) {
   const [data, setData] = useState({ email: "", password: "" });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -155,6 +161,33 @@ export default function LoginForm({ isVisible }: { isVisible: boolean }) {
           >
             {isLoading ? "Logging In..." : "Log In"}
           </Button>
+
+          {/* Switch to Register */}
+          {onSwitchToRegister && (
+            <Box sx={{ textAlign: "center", mt: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: "text.secondary", mb: 1 }}
+              >
+                Don't have an account?
+              </Typography>
+              <Button
+                variant="text"
+                color="secondary"
+                onClick={onSwitchToRegister}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 500,
+                  "&:hover": {
+                    bgcolor: "secondary.light",
+                    color: "secondary.contrastText",
+                  },
+                }}
+              >
+                Sign Up Instead
+              </Button>
+            </Box>
+          )}
         </Box>
       </Paper>
     </Fade>

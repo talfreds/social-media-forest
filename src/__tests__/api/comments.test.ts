@@ -1,10 +1,8 @@
 import { createMocks } from "node-mocks-http";
 import createHandler from "../../pages/api/comments/create";
 import deleteHandler from "../../pages/api/comments/delete";
-import { PrismaClient } from "@prisma/client";
 import { generateToken } from "../../lib/auth";
-
-const prisma = new PrismaClient();
+import { prisma, setupTestDatabase, cleanupTestDatabase } from "../test-utils";
 
 describe("Comments API", () => {
   let userId: string;
@@ -13,6 +11,9 @@ describe("Comments API", () => {
   let token: string;
 
   beforeAll(async () => {
+    // Connect to test database and clean any existing data
+    await setupTestDatabase();
+
     // Create test user
     const user = await prisma.user.create({
       data: {
@@ -35,11 +36,7 @@ describe("Comments API", () => {
   });
 
   afterAll(async () => {
-    await prisma.comment.deleteMany();
-    await prisma.post.deleteMany();
-    await prisma.user.deleteMany({
-      where: { email: "commenttest@example.com" },
-    });
+    await cleanupTestDatabase();
     await prisma.$disconnect();
   });
 
@@ -127,9 +124,9 @@ describe("Comments API", () => {
       const data = JSON.parse(res._getData());
       expect(data.error).toContain("Not authorized");
 
-      // Cleanup
-      await prisma.comment.delete({ where: { id: otherComment.id } });
-      await prisma.user.delete({ where: { id: otherUser.id } });
+      // Cleanup - use deleteMany to avoid "record not found" errors
+      await prisma.comment.deleteMany({ where: { id: otherComment.id } });
+      await prisma.user.deleteMany({ where: { id: otherUser.id } });
     });
   });
 });
