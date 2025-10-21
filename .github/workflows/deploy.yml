@@ -131,18 +131,20 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.OCI_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Setup repository on OCI
+      - name: Copy build artifacts to OCI
         run: |
-          # Check if repository exists, clone if not
+          # Create application directory if it doesn't exist
           ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "
-            if [ ! -d '/opt/social-media-app/.git' ]; then
-              echo 'Cloning repository...'
-              rm -rf /opt/social-media-app/*
-              git clone https://github.com/${{ github.repository }}.git /opt/social-media-app
-            else
-              echo 'Repository already exists'
-            fi
+            sudo mkdir -p /opt/social-media-app
+            sudo chown ${{ secrets.OCI_USER }}:${{ secrets.OCI_USER }} /opt/social-media-app
           "
+
+          # Copy build artifacts
+          scp -r .next ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          scp -r node_modules ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          scp -r prisma ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          scp package.json ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          scp pnpm-lock.yaml ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
 
       - name: Copy deployment script to OCI
         run: |

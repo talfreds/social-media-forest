@@ -69,30 +69,30 @@ cd ${BACKUP_DIR} && ls -t db_*.sql 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev
 log_info "Backup complete"
 
 ###############################################################################
-# 2. Pull latest code
+# 2. Verify build artifacts
 ###############################################################################
-log_step "Pulling latest code..."
+log_step "Verifying build artifacts..."
 cd ${APP_DIR}
 
-if [ ! -d "${APP_DIR}/.git" ]; then
-    log_error "Not a git repository. Repository must be cloned before deployment!"
-    log_error "Run: git clone <your-repo-url> ${APP_DIR}"
+# Check if build artifacts exist
+if [ ! -d "${APP_DIR}/.next" ]; then
+    log_error "Build artifacts not found! Expected .next directory in ${APP_DIR}"
+    log_error "Make sure the CI/CD pipeline copied the build artifacts correctly"
     exit 1
 fi
 
-# Stash any local changes
-git stash || true
-git pull origin main
+if [ ! -d "${APP_DIR}/node_modules" ]; then
+    log_error "Node modules not found! Expected node_modules directory in ${APP_DIR}"
+    log_error "Make sure the CI/CD pipeline copied the dependencies correctly"
+    exit 1
+fi
 
-log_info "Code updated"
+log_info "Build artifacts verified"
 
 ###############################################################################
-# 3. Install dependencies
+# 3. Dependencies already installed
 ###############################################################################
-log_step "Installing dependencies..."
-npm ci
-
-log_info "Dependencies installed"
+log_info "Dependencies already installed via CI/CD artifacts"
 
 ###############################################################################
 # 4. Run database migrations
@@ -104,12 +104,9 @@ npx prisma generate
 log_info "Migrations complete"
 
 ###############################################################################
-# 5. Build application
+# 5. Application already built
 ###############################################################################
-log_step "Building application..."
-npm run build
-
-log_info "Build complete"
+log_info "Application already built via CI/CD artifacts"
 
 ###############################################################################
 # 6. Restart application

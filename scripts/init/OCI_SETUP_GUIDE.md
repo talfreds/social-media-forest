@@ -139,16 +139,15 @@ chmod +x scripts/init/create-oci-instance.sh
 - Creates database and user
 - Configures firewall and security
 - Sets up environment variables
-- Clones your GitHub repository
-- Installs dependencies and builds the app
-- Starts the application with PM2
+- Creates application directory structure
+- Prepares for CI/CD deployment
 
 ### 3. **GitHub Integration**
 
 - Generates GitHub secrets configuration
 - Provides SSH keys and connection details
 - Sets up for CI/CD deployment
-- Handles optional GitHub repository cloning
+- Creates environment file with database credentials
 
 ## 🔧 Manual Steps After Script
 
@@ -187,12 +186,27 @@ pm2 logs social-media-app
 
 ### 3. Deploy via CI/CD
 
+The CI/CD pipeline uses a **build artifact approach** for deployment:
+
+1. **Build Stage**: Creates optimized production build
+2. **Deploy Stage**: Copies build artifacts to OCI instance
+3. **Runtime**: Runs database migrations and restarts application
+
 ```bash
 # Push to main branch to trigger deployment
 git add .
 git commit -m "Deploy to production"
 git push origin main
 ```
+
+**What happens during deployment:**
+
+- Tests run automatically
+- Application builds with production optimizations
+- Build artifacts (`.next`, `node_modules`, etc.) are copied to OCI
+- Database migrations run automatically
+- Application restarts with PM2
+- Health checks verify deployment success
 
 ## 🆕 Recent Improvements
 
