@@ -134,18 +134,17 @@ jobs:
 
       - name: Copy build artifacts to OCI
         run: |
+          # Debug: Check what's in the build artifacts directory
+          echo "Contents of build-artifacts directory:"
+          ls -la ./build-artifacts/
+
           # Create application directory if it doesn't exist
           ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "
             sudo mkdir -p /opt/social-media-app
             sudo chown ${{ secrets.OCI_USER }}:${{ secrets.OCI_USER }} /opt/social-media-app
           "
 
-          # Copy build artifacts from the downloaded location
-          scp -r ./build-artifacts/.next ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
-          scp -r ./build-artifacts/node_modules ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
-          scp -r ./build-artifacts/prisma ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
-          scp ./build-artifacts/package.json ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
-          scp ./build-artifacts/pnpm-lock.yaml ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          scp -r ./build-artifacts/* ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
 
       - name: Copy deployment script to OCI
         run: |
