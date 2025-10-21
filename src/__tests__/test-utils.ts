@@ -2,7 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { execSync } from "child_process";
 
 // Use test database URL for Prisma client
-const testDbUrl = "postgresql://test:test@localhost:5433/test_db";
+// In CI, PostgreSQL runs on port 5432, locally on 5433
+const testDbUrl =
+  process.env.DATABASE_URL || "postgresql://test:test@localhost:5433/test_db";
 const prisma = new PrismaClient({
   datasources: {
     db: {
@@ -14,6 +16,7 @@ const prisma = new PrismaClient({
 export async function setupTestDatabase() {
   try {
     console.log("Setting up test database...");
+    console.log("Database URL:", testDbUrl.replace(/\/\/.*@/, "//***:***@")); // Hide credentials in logs
     // Test database is already set up with migrations
     await prisma.$connect();
     // Clean up any leftover data from previous test runs
@@ -21,6 +24,10 @@ export async function setupTestDatabase() {
     console.log("Test database setup complete");
   } catch (error) {
     console.error("Failed to setup test database:", error);
+    console.error(
+      "Database URL used:",
+      testDbUrl.replace(/\/\/.*@/, "//***:***@")
+    ); // Hide credentials in logs
     throw error;
   }
 }

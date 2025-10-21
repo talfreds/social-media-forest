@@ -49,6 +49,8 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test_db
         run: |
+          # Wait for database to be ready
+          sleep 10
           pnpm prisma migrate deploy
           pnpm prisma generate
 

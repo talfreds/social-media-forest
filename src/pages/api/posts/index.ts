@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { PrismaClient } from "@prisma/client";
 import { setSecurityHeaders } from "../../../lib/security";
 import { handleApiError } from "../../../lib/error-handler";
+import { sortByActivityAndAge } from "../../../lib/sorting";
 
 const prisma = new PrismaClient();
 
@@ -29,10 +30,15 @@ export default async function handler(
             },
           },
         },
+        _count: {
+          select: { comments: true },
+        },
       },
-      orderBy: { createdAt: "desc" },
     });
-    res.status(200).json(posts);
+
+    // Sort posts using centralized sorting logic (same as forests)
+    const sortedPosts = sortByActivityAndAge(posts);
+    res.status(200).json(sortedPosts);
   } catch (error) {
     console.error("Posts fetch error:", error);
     handleApiError(error, res);

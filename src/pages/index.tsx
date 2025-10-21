@@ -27,6 +27,7 @@ import MenuBar from "../components/MenuBar";
 import TreePost from "../components/TreePost";
 import { forestBackgrounds } from "../lib/theme";
 import prisma from "../lib/prisma";
+import { sortByActivityAndAge, sortByOldest } from "../lib/sorting";
 
 type Comment = {
   id: string;
@@ -788,15 +789,20 @@ export const getServerSideProps: GetServerSideProps<
         include: { author: { select: { id: true, name: true } } },
         orderBy: { createdAt: "asc" },
       },
+      _count: {
+        select: { comments: true },
+      },
     },
-    orderBy: { createdAt: "desc" },
   });
 
   // Build nested comment structure for each post
-  const allPosts = postsWithComments.map(post => ({
+  const postsWithNestedComments = postsWithComments.map(post => ({
     ...post,
     comments: buildCommentTree(post.comments),
   }));
+
+  // Sort posts using centralized sorting logic (same as forests)
+  const allPosts = sortByActivityAndAge(postsWithNestedComments);
 
   return {
     props: {

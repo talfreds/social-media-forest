@@ -28,6 +28,7 @@ import {
 import { Forest, Pets, BugReport, Water, AcUnit } from "@mui/icons-material";
 import RegisterForm from "./RegisterForm";
 import LoginForm from "./LoginForm";
+import { sortByActivityAndAge } from "../lib/sorting";
 import LogoutButton from "./LogoutButton";
 import Image from "next/image";
 
@@ -95,14 +96,7 @@ export default function MenuBar({
         if (res.ok) {
           const data = await res.json();
 
-          const sortedForests = data.sort((a: ForestData, b: ForestData) => {
-            if (b._count.posts !== a._count.posts) {
-              return b._count.posts - a._count.posts;
-            }
-            return (
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-            );
-          });
+          const sortedForests = sortByActivityAndAge(data) as ForestData[];
           setForests(sortedForests);
         }
       } catch (error) {
@@ -133,14 +127,7 @@ export default function MenuBar({
       if (res.ok) {
         const data = await res.json();
 
-        const sortedForests = data.sort((a: ForestData, b: ForestData) => {
-          if (b._count.posts !== a._count.posts) {
-            return b._count.posts - a._count.posts;
-          }
-          return (
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
-        });
+        const sortedForests = sortByActivityAndAge(data) as ForestData[];
         setForests(sortedForests);
       } else {
         console.error("Failed to fetch forests:", res.status);
