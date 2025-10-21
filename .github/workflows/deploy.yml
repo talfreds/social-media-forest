@@ -131,6 +131,19 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.OCI_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Setup repository on OCI
+        run: |
+          # Check if repository exists, clone if not
+          ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "
+            if [ ! -d '/opt/social-media-app/.git' ]; then
+              echo 'Cloning repository...'
+              rm -rf /opt/social-media-app/*
+              git clone https://github.com/${{ github.repository }}.git /opt/social-media-app
+            else
+              echo 'Repository already exists'
+            fi
+          "
+
       - name: Copy deployment script to OCI
         run: |
           scp scripts/deploy-oci.sh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/

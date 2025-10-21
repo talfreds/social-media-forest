@@ -75,7 +75,8 @@ log_step "Pulling latest code..."
 cd ${APP_DIR}
 
 if [ ! -d "${APP_DIR}/.git" ]; then
-    log_error "Not a git repository. Clone your repo first!"
+    log_error "Not a git repository. Repository must be cloned before deployment!"
+    log_error "Run: git clone <your-repo-url> ${APP_DIR}"
     exit 1
 fi
 
