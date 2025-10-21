@@ -97,26 +97,53 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        run: pnpm run build
-
-      - name: Debug before upload
+          NEXT_TELEMETRY_DISABLED: 1
         run: |
-          echo "Files in current directory:"
-          ls -la
+          echo "Starting Next.js build..."
+          pnpm run build
+          BUILD_EXIT_CODE=$?
+          echo "Build exit code: $BUILD_EXIT_CODE"
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "❌ Build failed with exit code $BUILD_EXIT_CODE"
+            exit 1
+          fi
+          echo "✅ Build completed successfully"
+
+      - name: Prepare build artifacts
+        run: |
+          echo "=== Preparing build artifacts for upload ==="
           echo "Checking .next directory:"
-          ls -la .next/ || echo ".next not found"
+          if [ -d ".next" ]; then
+            echo "✅ .next directory exists!"
+            echo "Size of .next directory: $(du -sh .next/ | cut -f1)"
+          else
+            echo "❌ .next directory NOT FOUND - build may have failed!"
+            exit 1
+          fi
+
+          echo ""
+          echo "Creating tarball of build artifacts..."
+          # Create tarball with all necessary files including hidden directories
+          tar -czf build-artifacts.tar.gz \
+            .next/ \
+            prisma/ \
+            public/ \
+            package.json \
+            pnpm-lock.yaml \
+            next.config.ts
+
+          echo "✅ Tarball created: $(du -sh build-artifacts.tar.gz | cut -f1)"
+          echo "Contents of tarball:"
+          tar -tzf build-artifacts.tar.gz | head -30
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build
-          path: |
-            .next
-            prisma
-            public
-            package.json
-            pnpm-lock.yaml
-            next.config.ts
+          path: build-artifacts.tar.gz
+          retention-days: 1
+          if-no-files-found: error
+          compression-level: 0
 
   deploy:
     name: Deploy to Oracle OCI
@@ -132,16 +159,40 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build
-          path: ./build-artifacts
+          path: ./
 
-      - name: Debug downloaded artifacts
+      - name: Extract and verify build artifacts
         run: |
+          echo "=== Extracting Build Artifacts ==="
+          if [ -f "build-artifacts.tar.gz" ]; then
+            echo "✅ Tarball downloaded successfully"
+            echo "Size: $(du -sh build-artifacts.tar.gz | cut -f1)"
+          else
+            echo "❌ ERROR: build-artifacts.tar.gz not found!"
+            exit 1
+          fi
+
+          # Create build-artifacts directory and extract there
+          mkdir -p ./build-artifacts
+          tar -xzf build-artifacts.tar.gz -C ./build-artifacts/
+          echo "✅ Tarball extracted"
+
+          echo ""
+          echo "=== Verifying Extracted Files ==="
           echo "Contents of build-artifacts directory:"
           ls -la ./build-artifacts/
-          echo "Checking for .next specifically:"
-          ls -la ./build-artifacts/.next/ || echo ".next directory not found in artifacts!"
-          echo "Checking if .next is in a subdirectory:"
-          find ./build-artifacts -name ".next" -type d || echo "No .next directory found anywhere"
+
+          echo ""
+          echo "=== Checking for .next directory ==="
+          if [ -d "./build-artifacts/.next" ]; then
+            echo "✅ .next directory found!"
+            echo "Size: $(du -sh ./build-artifacts/.next/ | cut -f1)"
+            echo "Files in .next:"
+            ls -la ./build-artifacts/.next/ | head -20
+          else
+            echo "❌ ERROR: .next directory not found after extraction!"
+            exit 1
+          fi
 
       - name: Setup SSH
         run: |
@@ -152,11 +203,7 @@ jobs:
 
       - name: Copy build artifacts to OCI
         run: |
-          # Debug: Check what's in the build artifacts directory
-          echo "Contents of build-artifacts directory:"
-          ls -la ./build-artifacts/
-          echo "Checking for .next specifically:"
-          ls -la ./build-artifacts/.next/ || echo ".next directory not found in artifacts!"
+          echo "=== Copying Build Artifacts to OCI ==="
 
           # Create application directory if it doesn't exist
           ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "
@@ -166,7 +213,22 @@ jobs:
 
           # Copy all files including hidden ones (like .next)
           # NOTE: No --delete flag to preserve .env, node_modules, backups, logs, etc.
-          rsync -avz ./build-artifacts/ ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          echo "Starting rsync transfer..."
+          rsync -avz --progress ./build-artifacts/ ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          echo "✅ Files transferred successfully"
+
+          # Verify .next directory was copied
+          echo ""
+          echo "Verifying .next directory on remote server..."
+          ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "
+            if [ -d '/opt/social-media-app/.next' ]; then
+              echo '✅ .next directory present on server'
+              ls -la /opt/social-media-app/.next/ | head -10
+            else
+              echo '❌ ERROR: .next directory not found on server!'
+              exit 1
+            fi
+          "
 
       - name: Copy deployment script to OCI
         run: |
