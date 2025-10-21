@@ -169,14 +169,53 @@ log_info "Nginx configuration complete"
 # 7. Configure Firewall
 ###############################################################################
 log_info "Configuring firewall..."
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+
+# OCI Ubuntu images come with a REJECT rule that blocks all traffic by default
+# We need to ensure our ACCEPT rules come BEFORE the REJECT rule
+
+# Remove any existing port 80/443 rules (regardless of position)
+log_info "Removing any existing port 80/443 rules to ensure clean state..."
+while sudo iptables -L INPUT -n --line-numbers | grep -q "dpt:80"; do
+    LINE_NUM=$(sudo iptables -L INPUT -n --line-numbers | grep "dpt:80" | head -1 | awk '{print $1}')
+    sudo iptables -D INPUT "$LINE_NUM"
+done
+
+while sudo iptables -L INPUT -n --line-numbers | grep -q "dpt:443"; do
+    LINE_NUM=$(sudo iptables -L INPUT -n --line-numbers | grep "dpt:443" | head -1 | awk '{print $1}')
+    sudo iptables -D INPUT "$LINE_NUM"
+done
+
+# Remove REJECT rule if it exists
+REJECT_RULE_NUM=$(sudo iptables -L INPUT --line-numbers -n | grep "reject-with icmp-host-prohibited" | awk '{print $1}' | head -1)
+REJECT_EXISTED=false
+
+if [ -n "$REJECT_RULE_NUM" ]; then
+    log_info "Found REJECT rule at position $REJECT_RULE_NUM, removing it..."
+    sudo iptables -D INPUT "$REJECT_RULE_NUM"
+    REJECT_EXISTED=true
+fi
+
+# Now add the rules in the correct order
+log_info "Adding port 80 (HTTP) rule..."
+sudo iptables -A INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
+
+log_info "Adding port 443 (HTTPS) rule..."
+sudo iptables -A INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
+
+# Add REJECT rule back at the end if it existed before
+if [ "$REJECT_EXISTED" = true ]; then
+    log_info "Adding REJECT rule back at the end..."
+    sudo iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+fi
 
 # Install iptables-persistent to save rules
+log_info "Installing iptables-persistent to save firewall rules..."
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
 sudo netfilter-persistent save
 
-log_info "Firewall configured"
+log_info "Firewall configured successfully"
+log_info "Active firewall rules:"
+sudo iptables -L INPUT -n --line-numbers | grep -E "dpt:(22|80|443|3000)|REJECT"
 
 ###############################################################################
 # 8. Setup Application Directory
