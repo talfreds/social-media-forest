@@ -96,7 +96,15 @@ jobs:
       - name: Build application
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: pnpm run build
+
+      - name: Debug before upload
+        run: |
+          echo "Files in current directory:"
+          ls -la
+          echo "Checking .next directory:"
+          ls -la .next/ || echo ".next not found"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -137,6 +145,8 @@ jobs:
           # Debug: Check what's in the build artifacts directory
           echo "Contents of build-artifacts directory:"
           ls -la ./build-artifacts/
+          echo "Checking for .next specifically:"
+          ls -la ./build-artifacts/.next/ || echo ".next directory not found in artifacts!"
 
           # Create application directory if it doesn't exist
           ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "
