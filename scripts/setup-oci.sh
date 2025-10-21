@@ -54,6 +54,17 @@ else
 fi
 
 ###############################################################################
+# 2.5. Install pnpm
+###############################################################################
+log_info "Installing pnpm package manager..."
+if ! command -v pnpm &> /dev/null; then
+    sudo npm install -g pnpm@9.15.4
+    log_info "pnpm installed: $(pnpm --version)"
+else
+    log_info "pnpm already installed: $(pnpm --version)"
+fi
+
+###############################################################################
 # 3. Install PostgreSQL
 ###############################################################################
 log_info "Installing PostgreSQL..."
@@ -248,10 +259,10 @@ log_info "  JWT Secret: ${JWT_SECRET}"
 log_info ""
 log_info "Next Steps:"
 log_info "  1. Clone your repository to ${APP_DIR}"
-log_info "  2. Run 'cd ${APP_DIR} && npm ci'"
-log_info "  3. Run 'npx prisma migrate deploy'"
-log_info "  4. Run 'npm run build'"
-log_info "  5. Run 'pm2 start npm --name ${APP_NAME} -- start'"
+log_info "  2. Run 'cd ${APP_DIR} && pnpm install --frozen-lockfile'"
+log_info "  3. Run 'pnpm exec prisma migrate deploy'"
+log_info "  4. Run 'pnpm run build'"
+log_info "  5. Run 'pm2 start pnpm --name ${APP_NAME} -- start'"
 log_info "  6. Run 'pm2 save'"
 log_info ""
 log_info "Or use the GitHub Actions CI/CD pipeline!"

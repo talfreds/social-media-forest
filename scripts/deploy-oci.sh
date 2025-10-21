@@ -87,19 +87,18 @@ log_info "Build artifacts verified"
 # 3. Install dependencies
 ###############################################################################
 log_step "Installing dependencies..."
-if [ ! -d "${APP_DIR}/node_modules" ]; then
-    log_info "Installing dependencies with pnpm..."
-    pnpm install --frozen-lockfile --production
-else
-    log_info "Dependencies already installed"
-fi
+# Always install to ensure dependencies are up-to-date
+# pnpm will use cache and only reinstall if package.json/pnpm-lock.yaml changed
+# Note: We need all dependencies including devDependencies for Prisma CLI
+log_info "Installing/updating dependencies with pnpm..."
+pnpm install --frozen-lockfile
 
 ###############################################################################
 # 4. Run database migrations
 ###############################################################################
 log_step "Running database migrations..."
-npx prisma migrate deploy
-npx prisma generate
+pnpm exec prisma migrate deploy
+pnpm exec prisma generate
 
 log_info "Migrations complete"
 
@@ -118,7 +117,7 @@ if pm2 list | grep -q "${APP_NAME}"; then
     pm2 restart ${APP_NAME}
 else
     log_info "Starting new PM2 process..."
-    pm2 start npm --name "${APP_NAME}" -- start
+    pm2 start pnpm --name "${APP_NAME}" -- start
 fi
 
 # Save PM2 configuration

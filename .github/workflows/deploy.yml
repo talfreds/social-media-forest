@@ -113,8 +113,10 @@ jobs:
           path: |
             .next
             prisma
+            public
             package.json
             pnpm-lock.yaml
+            next.config.ts
 
   deploy:
     name: Deploy to Oracle OCI
@@ -162,7 +164,9 @@ jobs:
             sudo chown ${{ secrets.OCI_USER }}:${{ secrets.OCI_USER }} /opt/social-media-app
           "
 
-          scp -r ./build-artifacts/* ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          # Copy all files including hidden ones (like .next)
+          # NOTE: No --delete flag to preserve .env, node_modules, backups, logs, etc.
+          rsync -avz ./build-artifacts/ ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
 
       - name: Copy deployment script to OCI
         run: |
@@ -173,10 +177,15 @@ jobs:
         run: |
           ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "cd /opt/social-media-app && ./deploy-oci.sh"
 
-      - name: Health check
+      - name: Final health check
         run: |
-          sleep 10
+          # The deploy-oci.sh script already does extensive health checks
+          # This is a final verification from outside the server
+          echo "Waiting for application to stabilize..."
+          sleep 5
+          echo "Performing external health check..."
           curl -f ${{ secrets.APP_URL }}/api/health || exit 1
+          echo "✅ Application is healthy and accessible externally"
 
       - name: Notify deployment status
         if: always()
