@@ -112,7 +112,6 @@ jobs:
           name: build
           path: |
             .next
-            node_modules
             prisma
             package.json
             pnpm-lock.yaml
@@ -132,6 +131,15 @@ jobs:
         with:
           name: build
           path: ./build-artifacts
+
+      - name: Debug downloaded artifacts
+        run: |
+          echo "Contents of build-artifacts directory:"
+          ls -la ./build-artifacts/
+          echo "Checking for .next specifically:"
+          ls -la ./build-artifacts/.next/ || echo ".next directory not found in artifacts!"
+          echo "Checking if .next is in a subdirectory:"
+          find ./build-artifacts -name ".next" -type d || echo "No .next directory found anywhere"
 
       - name: Setup SSH
         run: |

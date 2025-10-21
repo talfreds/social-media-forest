@@ -53,7 +53,7 @@ mkdir -p ${BACKUP_DIR}
 
 if [ -d "${APP_DIR}/.next" ]; then
     log_info "Backing up previous build..."
-    tar -czf ${BACKUP_DIR}/build_${TIMESTAMP}.tar.gz -C ${APP_DIR} .next node_modules package-lock.json 2>/dev/null || true
+    tar -czf ${BACKUP_DIR}/build_${TIMESTAMP}.tar.gz -C ${APP_DIR} .next package.json pnpm-lock.yaml 2>/dev/null || true
 fi
 
 # Database backup
@@ -81,18 +81,18 @@ if [ ! -d "${APP_DIR}/.next" ]; then
     exit 1
 fi
 
-if [ ! -d "${APP_DIR}/node_modules" ]; then
-    log_error "Node modules not found! Expected node_modules directory in ${APP_DIR}"
-    log_error "Make sure the CI/CD pipeline copied the dependencies correctly"
-    exit 1
-fi
-
 log_info "Build artifacts verified"
 
 ###############################################################################
-# 3. Dependencies already installed
+# 3. Install dependencies
 ###############################################################################
-log_info "Dependencies already installed via CI/CD artifacts"
+log_step "Installing dependencies..."
+if [ ! -d "${APP_DIR}/node_modules" ]; then
+    log_info "Installing dependencies with pnpm..."
+    pnpm install --frozen-lockfile --production
+else
+    log_info "Dependencies already installed"
+fi
 
 ###############################################################################
 # 4. Run database migrations
