@@ -1,16 +1,16 @@
 // components/LoginForm.tsx
-import { useState } from "react";
-import {
-  TextField,
-  Button,
-  Paper,
-  Typography,
-  Box,
-  Fade,
-  InputAdornment,
-  IconButton,
-} from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  Fade,
+  IconButton,
+  InputAdornment,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
 
 export default function LoginForm({
   isVisible,
@@ -169,7 +169,7 @@ export default function LoginForm({
                 variant="body2"
                 sx={{ color: "text.secondary", mb: 1 }}
               >
-                Don't have an account?
+                Don&apos;t have an account?
               </Typography>
               <Button
                 variant="text"

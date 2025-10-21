@@ -1,9 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { rateLimit } from "./rate-limiter";
-import { validateInput, sanitizeString, sanitizeHtml } from "./validation";
-import { handleApiError, AppError } from "./error-handler";
-import { getSecurityConfig } from "./security-config";
 import { verifyToken } from "./auth";
+import { handleApiError } from "./error-handler";
+import { rateLimit } from "./rate-limiter";
+import { getSecurityConfig } from "./security-config";
+import { sanitizeHtml, sanitizeString, validateInput } from "./validation";
 
 // Security headers middleware
 export function setSecurityHeaders(res: NextApiResponse) {

@@ -1,14 +1,13 @@
-import React, { useState, useRef } from "react";
+import { Close, PhotoCamera } from "@mui/icons-material";
 import {
+  Alert,
   Box,
   Button,
-  IconButton,
-  Typography,
   CircularProgress,
-  Alert,
+  IconButton,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { PhotoCamera, Close } from "@mui/icons-material";
+import React, { useRef, useState } from "react";
 
 interface ImageUploadProps {
   onImageUpload: (imageUrl: string) => void;
@@ -146,6 +145,8 @@ export default function ImageUpload({
             mx: "auto", // Center horizontally
           }}
         >
+          {/* TODO: Replace with Next.js Image component for better performance */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={currentImage}
             alt="Uploaded preview"

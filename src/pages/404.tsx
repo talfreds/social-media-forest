@@ -1,6 +1,6 @@
-import { Box, Container, Typography, Button } from "@mui/material";
+import { Forest, Home } from "@mui/icons-material";
+import { Box, Button, Container, Typography } from "@mui/material";
 import Link from "next/link";
-import { Home, Forest } from "@mui/icons-material";
 
 export default function Custom404() {
   return (
@@ -44,7 +44,7 @@ export default function Custom404() {
               mb: 4,
             }}
           >
-            This path doesn't lead anywhere in our forest.
+            This path doesn&apos;t lead anywhere in our forest.
           </Typography>
           <Link href="/" style={{ textDecoration: "none" }}>
             <Button

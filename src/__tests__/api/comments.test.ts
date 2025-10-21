@@ -1,8 +1,8 @@
 import { createMocks } from "node-mocks-http";
+import { generateToken } from "../../lib/auth";
 import createHandler from "../../pages/api/comments/create";
 import deleteHandler from "../../pages/api/comments/delete";
-import { generateToken } from "../../lib/auth";
-import { prisma, setupTestDatabase, cleanupTestDatabase } from "../test-utils";
+import { cleanupTestDatabase, prisma, setupTestDatabase } from "../test-utils";
 
 describe("Comments API", () => {
   let userId: string;
@@ -97,6 +97,7 @@ describe("Comments API", () => {
           name: "OtherUser",
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const otherToken = generateToken(otherUser.id);
 
       // Create comment by other user

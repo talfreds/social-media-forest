@@ -1,36 +1,34 @@
 // components/MenuBar.tsx
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import { useTheme } from "@mui/material/styles";
+import { AcUnit, BugReport, Forest, Pets, Water } from "@mui/icons-material";
 import {
+  Alert,
   AppBar,
-  Toolbar,
+  Box,
   Button,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControlLabel,
+  List,
+  ListItemButton,
+  ListItemText,
   Menu,
   MenuItem,
-  Box,
-  Typography,
   Snackbar,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemButton,
-  FormControlLabel,
-  Checkbox,
-  Divider,
+  Toolbar,
+  Typography,
 } from "@mui/material";
-import { Forest, Pets, BugReport, Water, AcUnit } from "@mui/icons-material";
-import RegisterForm from "./RegisterForm";
-import LoginForm from "./LoginForm";
-import { sortByActivityAndAge } from "../lib/sorting";
-import LogoutButton from "./LogoutButton";
+import { useTheme } from "@mui/material/styles";
 import Image from "next/image";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { sortByActivityAndAge } from "../lib/sorting";
+import LoginForm from "./LoginForm";
+import LogoutButton from "./LogoutButton";
+import RegisterForm from "./RegisterForm";
 
 interface MenuBarProps {
   isLoggedIn: boolean;
@@ -58,7 +56,6 @@ export default function MenuBar({
 }: MenuBarProps) {
   const router = useRouter();
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [formType, setFormType] = useState<"register" | "login" | null>(null);
   const [showLoginError, setShowLoginError] = useState(false);

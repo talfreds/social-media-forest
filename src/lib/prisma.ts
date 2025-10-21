@@ -3,7 +3,6 @@ import { PrismaClient } from "@prisma/client";
 
 // Extend the global scope to store PrismaClient (TypeScript-friendly)
 declare global {
-  // eslint-disable-next-line no-var
   var prisma: PrismaClient | undefined;
 }
 

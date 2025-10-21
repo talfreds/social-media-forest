@@ -1,6 +1,6 @@
-import React from "react";
-import { Box, Typography, Card, CardContent, useTheme } from "@mui/material";
 import { Forest, Nature, Park } from "@mui/icons-material";
+import { Box, Card, CardContent, Typography } from "@mui/material";
+import React from "react";
 
 export type ForestType =
   | "deep-woods"
@@ -24,8 +24,6 @@ const ForestSection: React.FC<ForestSectionProps> = ({
   isActive = false,
   onClick,
 }) => {
-  const theme = useTheme();
-
   const forestStyles = {
     "deep-woods": {
       background: `

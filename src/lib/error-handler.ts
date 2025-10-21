@@ -1,11 +1,5 @@
 import { NextApiResponse } from "next";
 
-export interface ApiError {
-  message: string;
-  statusCode: number;
-  code?: string;
-}
-
 export class AppError extends Error {
   public statusCode: number;
   public code?: string;

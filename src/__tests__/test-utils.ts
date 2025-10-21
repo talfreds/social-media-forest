@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { execSync } from "child_process";
 
 // Use test database URL for Prisma client
 // In CI, PostgreSQL runs on port 5432, locally on 5433

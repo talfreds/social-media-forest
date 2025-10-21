@@ -1,21 +1,21 @@
-import { GetServerSideProps } from "next";
-import { parse } from "cookie";
-import { verifyToken } from "../../lib/auth";
+import { Forest, Home } from "@mui/icons-material";
 import {
   Box,
-  Container,
-  Typography,
   Breadcrumbs,
+  Container,
   Link as MuiLink,
+  Typography,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { Home, Forest } from "@mui/icons-material";
-import MenuBar from "../../components/MenuBar";
-import TreePost from "../../components/TreePost";
-import { forestBackgrounds } from "../../lib/theme";
-import prisma from "../../lib/prisma";
+import { parse } from "cookie";
+import { GetServerSideProps } from "next";
 import Link from "next/link";
 import { useState } from "react";
+import MenuBar from "../../components/MenuBar";
+import TreePost from "../../components/TreePost";
+import { verifyToken } from "../../lib/auth";
+import prisma from "../../lib/prisma";
+import { forestBackgrounds } from "../../lib/theme";
 
 type Comment = {
   id: string;
@@ -40,15 +40,9 @@ type Props = {
   post: Post;
   isLoggedIn: boolean;
   currentUser: { id: string; name: string | null; avatar?: string } | null;
-  setDarkMode: (value: boolean) => void;
 };
 
-export default function PostPage({
-  post,
-  isLoggedIn,
-  currentUser,
-  setDarkMode,
-}: Props) {
+export default function PostPage({ post, isLoggedIn, currentUser }: Props) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [replyInputs, setReplyInputs] = useState<{ [key: string]: string }>({});
@@ -286,9 +280,7 @@ export default function PostPage({
   );
 }
 
-export const getServerSideProps: GetServerSideProps<
-  Omit<Props, "setDarkMode">
-> = async context => {
+export const getServerSideProps: GetServerSideProps<Props> = async context => {
   const postId = context.params?.id as string;
 
   if (!postId || typeof postId !== "string" || postId.trim().length === 0) {
@@ -330,7 +322,7 @@ export const getServerSideProps: GetServerSideProps<
             id: true,
             content: true,
             imageUrl: true,
-            // @ts-ignore
+            //
             parentId: true,
             createdAt: true,
             author: {

@@ -1,39 +1,37 @@
-import { useState, useEffect } from "react";
+import {
+  Check,
+  Close,
+  HourglassEmpty,
+  People,
+  PersonAdd,
+  Search,
+} from "@mui/icons-material";
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Container,
+  IconButton,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import { parse } from "cookie";
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Link from "next/link";
-import {
-  Box,
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  TextField,
-  Avatar,
-  Chip,
-  Tabs,
-  Tab,
-  Alert,
-  CircularProgress,
-  IconButton,
-  Divider,
-} from "@mui/material";
-import {
-  People,
-  PersonAdd,
-  Check,
-  Close,
-  Search,
-  HourglassEmpty,
-  ArrowBack,
-} from "@mui/icons-material";
-import { useTheme } from "@mui/material/styles";
-import { parse } from "cookie";
-import { verifyToken } from "../lib/auth";
-import prisma from "../lib/prisma";
+import { useState } from "react";
 import MenuBar from "../components/MenuBar";
+import { verifyToken } from "../lib/auth";
 import { HydrationSafeDate } from "../lib/date-utils";
+import prisma from "../lib/prisma";
 
 interface Friend {
   friendshipId: string;
@@ -78,11 +76,10 @@ export default function FriendsPage({
   const isDark = theme.palette.mode === "dark";
   const [tabValue, setTabValue] = useState(0);
   const [searchName, setSearchName] = useState("");
-  const [friends, setFriends] = useState(initialFriends);
-  const [sentRequests, setSentRequests] = useState(initialSentRequests);
-  const [receivedRequests, setReceivedRequests] = useState(
-    initialReceivedRequests
-  );
+
+  const [friends] = useState(initialFriends);
+  const [sentRequests] = useState(initialSentRequests);
+  const [receivedRequests] = useState(initialReceivedRequests);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -113,7 +110,7 @@ export default function FriendsPage({
         const data = await res.json();
         setError(data.error || "Failed to send friend request");
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred");
     } finally {
       setLoading(false);
@@ -147,7 +144,7 @@ export default function FriendsPage({
         const data = await res.json();
         setError(data.error || "Failed to respond to request");
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred");
     } finally {
       setLoading(false);

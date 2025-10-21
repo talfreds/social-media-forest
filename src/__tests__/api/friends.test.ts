@@ -1,9 +1,9 @@
 import { createMocks } from "node-mocks-http";
-import sendHandler from "../../pages/api/friends/send";
-import respondHandler from "../../pages/api/friends/respond";
-import listHandler from "../../pages/api/friends/list";
 import { generateToken } from "../../lib/auth";
-import { prisma, setupTestDatabase, cleanupTestDatabase } from "../test-utils";
+import listHandler from "../../pages/api/friends/list";
+import respondHandler from "../../pages/api/friends/respond";
+import sendHandler from "../../pages/api/friends/send";
+import { cleanupTestDatabase, prisma, setupTestDatabase } from "../test-utils";
 
 describe("Friend System API", () => {
   let user1Id: string;

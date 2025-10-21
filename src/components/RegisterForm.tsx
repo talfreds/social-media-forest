@@ -1,30 +1,26 @@
 // components/RegisterForm.tsx
-import { useState } from "react";
 import {
-  TextField,
-  Button,
-  Paper,
-  Typography,
-  Box,
-  Fade,
-  InputAdornment,
-  IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Avatar,
-  Grid,
-} from "@mui/material";
-import {
-  Visibility,
-  VisibilityOff,
-  Pets,
+  AcUnit,
   BugReport,
   Forest,
-  AcUnit,
+  Pets,
+  Visibility,
+  VisibilityOff,
   Water,
 } from "@mui/icons-material";
+import {
+  Avatar,
+  Box,
+  Button,
+  Fade,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
 
 const avatarOptions = [
   { value: "cat", label: "Cat", icon: Pets },

@@ -1,25 +1,24 @@
-import React, { useState, useEffect } from "react";
+import { Close, Forest, Share, Spa } from "@mui/icons-material";
 import {
+  Avatar,
   Box,
+  Button,
   Card,
   CardContent,
-  Typography,
-  Avatar,
-  IconButton,
-  TextField,
-  Button,
+  Dialog,
   Divider,
-  useTheme,
-  useMediaQuery,
+  IconButton,
   Menu,
   MenuItem,
+  TextField,
   Tooltip,
-  Dialog,
+  Typography,
+  useTheme,
 } from "@mui/material";
-import { Send, Forest, Nature, Spa, Share, Close } from "@mui/icons-material";
-import NestedComment from "./NestedComment";
 import Link from "next/link";
+import React from "react";
 import { HydrationSafeDate } from "../lib/date-utils";
+import NestedComment from "./NestedComment";
 
 interface Comment {
   id: string;
@@ -366,6 +365,8 @@ const TreePost: React.FC<TreePostProps> = ({
         }}
       >
         {imageUrl ? (
+          // TODO: Replace with Next.js Image component for better performance
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageUrl}
             alt="Post image"
@@ -737,6 +738,8 @@ const TreePost: React.FC<TreePostProps> = ({
               minHeight: "50vh",
             }}
           >
+            {/* TODO: Replace with Next.js Image component for better performance */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt="Full size preview"

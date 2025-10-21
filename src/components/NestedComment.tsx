@@ -1,30 +1,29 @@
-import React, { useState } from "react";
-import {
-  Box,
-  Typography,
-  Avatar,
-  IconButton,
-  TextField,
-  Button,
-  Collapse,
-  Tooltip,
-  Menu,
-  MenuItem,
-} from "@mui/material";
 import {
   AccountCircle,
-  Send,
-  Reply,
-  Spa,
-  ExpandMore,
-  ExpandLess,
-  MoreVert,
-  Edit,
   Delete,
+  Edit,
+  ExpandLess,
+  ExpandMore,
+  MoreVert,
+  Reply,
   Share,
+  Spa,
 } from "@mui/icons-material";
-import { HydrationSafeDate } from "../lib/date-utils";
+import {
+  Avatar,
+  Box,
+  Button,
+  Collapse,
+  IconButton,
+  Menu,
+  MenuItem,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import Link from "next/link";
+import React, { useState } from "react";
+import { HydrationSafeDate } from "../lib/date-utils";
 
 interface Author {
   name: string | null;
@@ -273,6 +272,8 @@ const NestedComment: React.FC<NestedCommentProps> = ({
                 border: `1px solid ${theme.palette.divider}`,
               }}
             >
+              {/* TODO: Replace with Next.js Image component for better performance */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={comment.imageUrl}
                 alt="Comment attachment"

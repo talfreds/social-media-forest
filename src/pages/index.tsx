@@ -1,33 +1,28 @@
-import { GetServerSideProps } from "next";
-import { parse } from "cookie";
-import { verifyToken } from "../lib/auth";
-import { useState, useEffect } from "react";
+import { Forest, Nature } from "@mui/icons-material";
 import {
   Box,
-  Container,
-  Typography,
-  TextField,
   Button,
-  Snackbar,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Card,
   CardContent,
-  IconButton,
+  Container,
+  Dialog,
+  DialogContent,
+  TextField,
+  Typography,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import RegisterForm from "../components/RegisterForm";
-import LoginForm from "../components/LoginForm";
+import { parse } from "cookie";
+import { GetServerSideProps } from "next";
+import { useState } from "react";
 import ImageUpload from "../components/ImageUpload";
-import { Send, Forest, Nature } from "@mui/icons-material";
+import LoginForm from "../components/LoginForm";
 import MenuBar from "../components/MenuBar";
+import RegisterForm from "../components/RegisterForm";
 import TreePost from "../components/TreePost";
-import { forestBackgrounds } from "../lib/theme";
+import { verifyToken } from "../lib/auth";
 import prisma from "../lib/prisma";
-import { sortByActivityAndAge, sortByOldest } from "../lib/sorting";
+import { sortByActivityAndAge } from "../lib/sorting";
+import { forestBackgrounds } from "../lib/theme";
 
 type Comment = {
   id: string;
@@ -54,7 +49,6 @@ type Props = {
   currentUser: { id: string; name: string | null; avatar?: string } | null;
   // nearbyPosts: Post[];
   allPosts: Post[];
-  setDarkMode: (value: boolean) => void;
   // initialCity: string;
   // initialLat: number;
   // initialLon: number;
@@ -66,7 +60,6 @@ export default function Home({
   isLoggedIn,
   currentUser,
   allPosts,
-  setDarkMode,
   currentForestId,
   currentForestName,
 }: Props) {
@@ -74,6 +67,7 @@ export default function Home({
   const isDark = theme.palette.mode === "dark";
   const [newPost, setNewPost] = useState("");
   const [newPostImage, setNewPostImage] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [userCity, setUserCity] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>(allPosts);
   // Location-specific posting is temporarily disabled; we'll re-introduce later
@@ -687,9 +681,7 @@ export default function Home({
   );
 }
 
-export const getServerSideProps: GetServerSideProps<
-  Omit<Props, "setDarkMode">
-> = async context => {
+export const getServerSideProps: GetServerSideProps<Props> = async context => {
   const cookies = parse(context.req.headers.cookie || "");
   const token = cookies.authToken;
   const decodedUser = token ? verifyToken(token) : null;

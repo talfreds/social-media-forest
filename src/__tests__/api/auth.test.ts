@@ -1,8 +1,8 @@
-import { createMocks } from "node-mocks-http";
-import signupHandler from "../../pages/api/auth/signup";
-import loginHandler from "../../pages/api/auth/login";
 import bcrypt from "bcryptjs";
-import { prisma, setupTestDatabase, cleanupTestDatabase } from "../test-utils";
+import { createMocks } from "node-mocks-http";
+import loginHandler from "../../pages/api/auth/login";
+import signupHandler from "../../pages/api/auth/signup";
+import { cleanupTestDatabase, prisma } from "../test-utils";
 
 describe("/api/auth/signup", () => {
   beforeAll(async () => {

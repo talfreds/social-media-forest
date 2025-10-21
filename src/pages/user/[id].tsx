@@ -1,24 +1,24 @@
-import { GetServerSideProps } from "next";
-import { parse } from "cookie";
-import { verifyToken } from "../../lib/auth";
+import { Forest, Nature } from "@mui/icons-material";
 import {
+  Avatar,
   Box,
-  Container,
-  Typography,
+  Button,
   Card,
   CardContent,
-  Avatar,
-  Divider,
   Chip,
-  Button,
+  Container,
+  Divider,
+  Typography,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { Forest, Nature, Comment as CommentIcon } from "@mui/icons-material";
-import MenuBar from "../../components/MenuBar";
-import { forestBackgrounds } from "../../lib/theme";
-import prisma from "../../lib/prisma";
+import { parse } from "cookie";
+import { GetServerSideProps } from "next";
 import Link from "next/link";
+import MenuBar from "../../components/MenuBar";
+import { verifyToken } from "../../lib/auth";
 import { HydrationSafeDate } from "../../lib/date-utils";
+import prisma from "../../lib/prisma";
+import { forestBackgrounds } from "../../lib/theme";
 
 type Props = {
   user: {
@@ -620,16 +620,15 @@ export const getServerSideProps: GetServerSideProps<
       return { notFound: true };
     }
 
-    // @ts-ignore - Prisma types may need regeneration
     const [posts, comments, forests] = await Promise.all([
       prisma.post.findMany({
         where: { authorId: userId },
         select: {
           id: true,
           content: true,
-          // @ts-ignore
+          //
           createdAt: true,
-          // @ts-ignore
+          //
           forest: { select: { name: true } },
           _count: { select: { comments: true } },
         },
@@ -641,13 +640,13 @@ export const getServerSideProps: GetServerSideProps<
         select: {
           id: true,
           content: true,
-          // @ts-ignore
+          //
           createdAt: true,
           post: {
             select: {
               id: true,
               content: true,
-              // @ts-ignore
+              //
               forest: { select: { name: true } },
             },
           },
@@ -655,7 +654,7 @@ export const getServerSideProps: GetServerSideProps<
         orderBy: { createdAt: "desc" },
         take: 10,
       }),
-      // @ts-ignore
+      //
       prisma.forest.findMany({
         where: { creatorId: userId },
         select: {
