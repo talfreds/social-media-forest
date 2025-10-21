@@ -201,23 +201,19 @@ git push origin main
 The scripts have been significantly improved with:
 
 1. **Robust Compartment Handling**
-
    - Automatic fallback to tenancy ID when compartments are empty
    - Better error handling for OCI CLI commands
 
 2. **VCN Creation Automation**
-
    - New `create-vcn.sh` script for automatic VCN setup
    - Creates all necessary networking components
 
 3. **ARM64 Support**
-
    - Updated to use ARM64 shapes (VM.Standard.A1.Flex)
    - Compatible Ubuntu 22.04 ARM64 images
    - Proper boot volume sizing (50GB minimum)
 
 4. **Enhanced Validation**
-
    - Prerequisites validation before instance creation
    - Better error messages and logging
    - JSON metadata formatting fixes

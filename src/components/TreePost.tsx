@@ -276,8 +276,8 @@ const TreePost: React.FC<TreePostProps> = ({
                           index === 0
                             ? "-25deg"
                             : index === 1
-                            ? "0deg"
-                            : "25deg"
+                              ? "0deg"
+                              : "25deg"
                         })`,
                         "&::after": {
                           content: '""',

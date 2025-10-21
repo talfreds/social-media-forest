@@ -133,7 +133,6 @@ export const getSecurityConfig = () => {
     ...securityConfig,
     headers: {
       ...securityConfig.headers,
-  
     },
     session: {
       ...securityConfig.session,

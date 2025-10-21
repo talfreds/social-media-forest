@@ -277,8 +277,8 @@ export default function RegisterForm({
               touched.name && validateName(data.name).length > 0
                 ? `Needs: ${validateName(data.name).join(", ")}`
                 : data.email && data.name === generateDisplayName(data.email)
-                ? "Auto-filled from your email (you can change this)"
-                : "2-50 characters: letters, numbers, spaces, _ and -"
+                  ? "Auto-filled from your email (you can change this)"
+                  : "2-50 characters: letters, numbers, spaces, _ and -"
             }
             sx={{
               "& .MuiOutlinedInput-root": {
