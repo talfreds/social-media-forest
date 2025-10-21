@@ -123,6 +123,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build
+          path: ./build-artifacts
 
       - name: Setup SSH
         run: |
@@ -139,12 +140,12 @@ jobs:
             sudo chown ${{ secrets.OCI_USER }}:${{ secrets.OCI_USER }} /opt/social-media-app
           "
 
-          # Copy build artifacts
-          scp -r .next ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
-          scp -r node_modules ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
-          scp -r prisma ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
-          scp package.json ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
-          scp pnpm-lock.yaml ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          # Copy build artifacts from the downloaded location
+          scp -r ./build-artifacts/.next ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          scp -r ./build-artifacts/node_modules ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          scp -r ./build-artifacts/prisma ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          scp ./build-artifacts/package.json ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
+          scp ./build-artifacts/pnpm-lock.yaml ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
 
       - name: Copy deployment script to OCI
         run: |
