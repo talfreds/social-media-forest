@@ -50,7 +50,7 @@ if ! command -v pnpm &> /dev/null; then
     # Try to install pnpm globally via npm
     if command -v npm &> /dev/null; then
         log_info "Installing pnpm via npm..."
-        sudo npm install -g pnpm@9.15.4
+        sudo npm install -g pnpm@10.18.3
     else
         log_error "Neither pnpm nor npm is available. Please run setup-oci.sh first!"
         exit 1

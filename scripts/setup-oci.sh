@@ -58,7 +58,7 @@ fi
 ###############################################################################
 log_info "Installing pnpm package manager..."
 if ! command -v pnpm &> /dev/null; then
-    sudo npm install -g pnpm@9.15.4
+    sudo npm install -g pnpm@10.18.3
     log_info "pnpm installed: $(pnpm --version)"
 else
     log_info "pnpm already installed: $(pnpm --version)"

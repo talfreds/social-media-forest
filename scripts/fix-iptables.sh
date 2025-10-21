@@ -2,7 +2,7 @@
 
 ###############################################################################
 # Fix iptables Rules on OCI Instance
-# This script fixes the ordering of iptables rules to ensure HTTP/HTTPS work
+# UNTESTED - VERIFY BEFORE USE
 ###############################################################################
 
 set -e
