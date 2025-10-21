@@ -211,8 +211,6 @@ jobs:
             sudo chown ${{ secrets.OCI_USER }}:${{ secrets.OCI_USER }} /opt/social-media-app
           "
 
-          # Copy all files including hidden ones (like .next)
-          # NOTE: No --delete flag to preserve .env, node_modules, backups, logs, etc.
           echo "Starting rsync transfer..."
           rsync -avz --progress ./build-artifacts/ ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/opt/social-media-app/
           echo "✅ Files transferred successfully"
@@ -237,7 +235,7 @@ jobs:
 
       - name: Deploy to OCI
         run: |
-          ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "cd /opt/social-media-app && ./deploy-oci.sh"
+          ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "bash -l -c 'cd /opt/social-media-app && ./deploy-oci.sh'"
 
       - name: Final health check
         run: |

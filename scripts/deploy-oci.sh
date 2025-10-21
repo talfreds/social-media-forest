@@ -43,6 +43,28 @@ if [ ! -f "${APP_DIR}/.env" ]; then
     exit 1
 fi
 
+# Ensure pnpm is available
+if ! command -v pnpm &> /dev/null; then
+    log_warn "pnpm not found in PATH. Attempting to install..."
+    
+    # Try to install pnpm globally via npm
+    if command -v npm &> /dev/null; then
+        log_info "Installing pnpm via npm..."
+        sudo npm install -g pnpm@9.15.4
+    else
+        log_error "Neither pnpm nor npm is available. Please run setup-oci.sh first!"
+        exit 1
+    fi
+    
+    # Verify installation
+    if ! command -v pnpm &> /dev/null; then
+        log_error "Failed to install pnpm. Please check your environment."
+        exit 1
+    fi
+fi
+
+log_info "Using pnpm version: $(pnpm --version)"
+
 log_info "Starting deployment at $(date)"
 
 ###############################################################################
